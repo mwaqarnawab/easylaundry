@@ -1,0 +1,26 @@
+{
+	"development": {
+		"username": "root",
+		"password": "",
+		"database": "softwydz_easylaundry",
+		"host": "localhost",
+		"dialect": "mysql",
+		"timezone": "Asia/Karachi"
+	},
+	"test": {
+		"username": "root",
+		"password": "",
+		"database": "softwydz_easylaundry",
+		"host": "localhost",
+		"dialect": "mysql",
+		"timezone": "Asia/Karachi"
+	},
+	"production": {
+		"username": "softwydz_easylaundry",
+		"password": "easylaundry",
+		"database": "softwydz_easylaundry",
+		"host": "localhost",
+		"dialect": "mysql",
+		"timezone": "Asia/Karachi"
+	}
+}
