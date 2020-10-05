@@ -41,14 +41,48 @@ router.get('/', function(req, res, next) {
 		});
 });
 
+
+router.post('/checkIfUserExist', function(req, res, next) {
+	let user = req.body;
+	
+			// CHECK IF THERE IS ANOTHER USER WITH THE SAME NAME
+			model.users
+				.findOne({
+					where: {
+						$or: [
+							sequelize.where(
+								sequelize.fn('lower', sequelize.col('email')),
+								sequelize.fn('lower', user.email)
+							),
+							sequelize.where(
+								sequelize.fn('lower', sequelize.col('mobile_no')),
+								sequelize.fn('lower', user.mobile_no)
+							)
+						]
+					}
+				})
+				.then(data => {
+					if (data) {
+						res.status(400).send('Email/Mobile no is already Registered');
+						return;
+					}
+					else{
+						res.status(200).send('No User Found with this Email/Mobile no');
+						return;
+					}	
+		});
+});
+
+
 router.post('/register', function(req, res, next) {
-	let vm = req.body;
+	let user_detail = req.body.user;
+	let address_detail = req.body.address;
 
 	// CHECK IF THE PROFILE EXISTS
 	model.roles
 		.findOne({
 			where: {
-				role_id: vm.role
+				role_id: user_detail.role
 			}
 		})
 		.then(data => {
@@ -64,51 +98,217 @@ router.post('/register', function(req, res, next) {
 						$or: [
 							sequelize.where(
 								sequelize.fn('lower', sequelize.col('email')),
-								sequelize.fn('lower', vm.email)
+								sequelize.fn('lower', user_detail.email)
 							),
 							sequelize.where(
 								sequelize.fn('lower', sequelize.col('mobile_no')),
-								sequelize.fn('lower', vm.mobile_no)
+								sequelize.fn('lower', user_detail.mobile_no)
 							)
 						]
 					}
 				})
 				.then(data => {
 					if (data) {
-						res.send(400, 'There is another user with this Email or Mobile No');
+						res.status(400).send('There is another user with this Email or Mobile No');
 						return;
 					}
 					
 					 trans.execTrans(res, t => {
-						return model.address
-							.create(vm, {
+						return Promise.resolve(model.address
+							.create(address_detail, {
 								transaction: t
 								
-							})
+							}))
 							.then(address =>{
 								
-								vm.address = address.address_id
+								user_detail.address = address.address_id
+								model.users
+							.create(user_detail, {
+								transaction: t
+							})
+							.then(user =>{
+								t.commit();
+								res.status(200).send(user)
+								return
+								
+								});
+							})
+							
+					});
+					});
+		});
+});
+
+
+router.post('/changePassword', function(req, res, next) {
+	let user = req.body;
+	
+			// CHECK IF THERE IS ANOTHER USER WITH THE SAME NAME
+			model.users
+				.findOne({
+					where: {
+						$and: [
+							sequelize.where(
+								sequelize.fn('lower', sequelize.col('user_id')),
+								sequelize.fn('lower', user.user_id)
+							)
+						]
+					}
+				})
+				.then(data => {
+					if (data) {
+						if(data.password == user.password){
+							res.status(400).send('Password is same as old password');
+							return;
+						}
+						else{
+							
+							trans.execTrans(res, t => {
+								return Promise.resolve(model.users
+									.update(
+										{
+											password: user.password,
+										},
+										{
+											where: {
+												user_id: user.user_id
+											},
+											transaction: t,
+											individualHooks: true
+										}
+									))
+									.then(user =>{
+										t.commit();
+										res.status(200).send('Pasword Updated Successfully')
+										return
+										
+										});
+									})
+						}	
+					}
+					else{
+						res.status(400).send('No User Exist with this id');
+							return;
+					}
+					});
+	
+});
+
+
+router.post('/login', function(req, res, next) {
+	let user = req.body;
+	
+			// CHECK IF THERE IS ANOTHER USER WITH THE SAME NAME
+			model.users
+				.findOne({
+					where: {
+						$and: [
+							sequelize.where(
+								sequelize.col('password'), user.password
+							),
+							sequelize.where(
+								sequelize.fn('lower', sequelize.col('email')),
+								sequelize.fn('lower', user.email)
+								
+							)
+						]
+					}
+				})
+				.then(data => {
+					if (data) {
+						
+							res.status(200).send('You are logged In to app');
+							return;
+						}
+						
+					else{
+						res.status(400).send('Incorrect Email or Password');
+							return;
+					}
+					
+				});
+
+	
+});
+
+
+router.post('/register', function(req, res, next) {
+	let user_detail = req.body.user;
+	let address_detail = req.body.address;
+
+	// CHECK IF THE PROFILE EXISTS
+	model.roles
+		.findOne({
+			where: {
+				role_id: user_detail.role
+			}
+		})
+		.then(data => {
+			if (!data) {
+				res.send(400, 'Role not found');
+				return;
+			}
+
+			// CHECK IF THERE IS ANOTHER USER WITH THE SAME NAME
+			model.users
+				.findOne({
+					where: {
+						$or: [
+							sequelize.where(
+								sequelize.fn('lower', sequelize.col('email')),
+								sequelize.fn('lower', user_detail.email)
+							),
+							sequelize.where(
+								sequelize.fn('lower', sequelize.col('mobile_no')),
+								sequelize.fn('lower', user_detail.mobile_no)
+							)
+						]
+					}
+				})
+				.then(data => {
+					if (data) {
+						res.status(400).send('There is another user with this Email or Mobile No');
+						return;
+					}
+					
+					 trans.execTrans(res, t => {
+						return Promise.resolve(model.address
+							.create(address_detail, {
+								transaction: t
+								
+							}))
+							.then(address =>{
+								
+								user_detail.address = address.address_id
+								model.users
+							.create(user_detail, {
+								transaction: t
+							})
+							.then(user =>{
+								t.commit();
+								res.status(200).send(user)
+								return
+								
+								});
 							})
 							
 					});
 		
 
-
-
-				return trans.execTrans(res, t => {
-						console.log(vm.address)
-						return model.users
-							.create(vm, {
-								transaction: t
-							})
-							.then(user =>{
-								res.status(200).send(user)
-								return
+				// return trans.execTrans(res, t => {
+				// 		// console.log(vm.address)
+				// 		return model.users
+				// 			.create(user_detail, {
+				// 				transaction: t
+				// 			})
+				// 			.then(user =>{
+				// 				res.status(200).send(user)
+				// 				return
 								
-								});
+				// 				});
 								
 							
-						});	
+				// 		});	
 					});
 		});
 });

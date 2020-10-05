@@ -17,7 +17,7 @@ Transaction.prototype.execTrans = function(res, func) {
 			t.trace_model = res.trace_model;
 			return func(t)
 				.then(function() {
-					t.commit();
+					
 				})
 				.catch(function(error) {
 					console.error('error transaction', error);
