@@ -15,6 +15,8 @@
 		"ejs": "^2.6.1",
 		"express": "^4.16.4",
 		"mysql2": "^1.5.3",
+		"njwt": "^0.4.0",
+		"secure-random": "^1.1.2",
 		"sequelize": "^4.38.0",
 		"sequelize-cli": "^4.0.0",
 		"sequelize-mysql-set-timezone-fix": "^3.13.1",
