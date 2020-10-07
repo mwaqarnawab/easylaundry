@@ -2,6 +2,8 @@ var express = require('express');
 var router = express.Router();
 var model = require('../models/index');
 var trans = require('../plugins/transaction');
+var ba64 = require("ba64");
+const fs = require('fs');
 
 /* Include token authentication methods */
 var auth_file = require('../middleware/authentication')
@@ -10,6 +12,7 @@ var verifyToken = auth_file.verifyToken
 
 trans.setModel(model);
 var sequelize = require('sequelize');
+const { request } = require('express');
 
 router.get('/', function (req, res, next) {
 	var vm = req.query;
@@ -60,20 +63,20 @@ router.post('/checkIfUserExist', function (req, res, next) {
 						sequelize.fn('lower', sequelize.col('email')),
 						sequelize.fn('lower', user.email)
 					),
-					sequelize.where(
-						sequelize.fn('lower', sequelize.col('mobile_no')),
-						sequelize.fn('lower', user.mobile_no)
-					)
+					// sequelize.where(
+					// 	sequelize.fn('lower', sequelize.col('mobile_no')),
+					// 	sequelize.fn('lower', user.mobile_no)
+					// )
 				]
 			}
 		})
 		.then(data => {
 			if (data) {
-				res.status(400).send('Email/Mobile no is already Registered');
+				res.status(400).send('This Email is already Registered');
 				return;
 			}
 			else {
-				res.status(200).send('No User Found with this Email/Mobile no');
+				res.status(200).send('No User Found with this Email');
 				return;
 			}
 		});
@@ -84,6 +87,39 @@ router.post('/register', function (req, res, next) {
 	let user_detail = req.body.user;
 	let address_detail = req.body.address;
 
+	cnic_front_image = ""
+	cnic_back_image = ""
+
+	cnic_front_image_extension = ""
+	cnic_back_image_extension = ""
+
+	if(address_detail.cnic_front && address_detail.cnic_front != "" && address_detail.cnic_front != null){
+		cnic_front_image = address_detail.cnic_front
+		image_extension = cnic_front_image.substring("data:image/".length, cnic_front_image.indexOf(";base64"))
+		address_detail.cnic_front_image_extension = image_extension
+		address_detail.cnic_front = ""
+	}
+
+	if(address_detail.cnic_back && address_detail.cnic_back != "" && address_detail.cnic_back != null){
+		cnic_back_image = address_detail.cnic_back
+		image_extension = cnic_back_image.substring("data:image/".length, cnic_back_image.indexOf(";base64"))
+		address_detail.cnic_back_image_extension = image_extension
+		address_detail.cnic_back = ""
+	}
+	
+
+	
+
+	// let buff = new Buffer.from(data, 'base64');
+	// fs.writeFileSync('stack-abuse-logo-out.png', buff);
+
+	// let buff = fs.readFileSync('images/stack-abuse-logo-out');
+	// let base64data = buff.toString('base64');
+	// res.status(200).send(base64data);
+	// return
+
+		
+			
 	// CHECK IF THE PROFILE EXISTS
 	model.roles
 		.findOne({
@@ -106,16 +142,16 @@ router.post('/register', function (req, res, next) {
 								sequelize.fn('lower', sequelize.col('email')),
 								sequelize.fn('lower', user_detail.email)
 							),
-							sequelize.where(
-								sequelize.fn('lower', sequelize.col('mobile_no')),
-								sequelize.fn('lower', user_detail.mobile_no)
-							)
+							// sequelize.where(
+							// 	sequelize.fn('lower', sequelize.col('mobile_no')),
+							// 	sequelize.fn('lower', user_detail.mobile_no)
+							// )
 						]
 					}
 				})
 				.then(data => {
 					if (data) {
-						res.status(400).send('There is another user with this Email or Mobile No');
+						res.status(400).send('There is another user with this Email');
 						return;
 					}
 
@@ -128,11 +164,32 @@ router.post('/register', function (req, res, next) {
 							.then(address => {
 
 								user_detail.address = address.address_id
-								model.users
+								Promise.resolve(model.users
 									.create(user_detail, {
 										transaction: t
-									})
+									}))
 									.then(user => {
+										
+										
+										//Write cnic front image
+										if(cnic_front_image != ""){
+											data_url = cnic_front_image;
+											ba64.writeImageSync("images/user"+user.user_id+"front", data_url);
+										}
+
+										//Write cnic back image
+										if(cnic_back_image != ""){
+											data_url = cnic_back_image;
+											ba64.writeImageSync("images/user"+user.user_id+"back", data_url);
+										}
+										
+										
+									
+
+
+										// let buff = new Buffer.from(cnic_front_image, 'base64');
+										// fs.writeFileSync('images/user'+user.user_id+'front.'+image_extension, buff);
+
 										t.commit();
 										res.status(200).send(user)
 										return
@@ -155,8 +212,8 @@ router.post('/changePassword', function (req, res, next) {
 			where: {
 				$and: [
 					sequelize.where(
-						sequelize.fn('lower', sequelize.col('user_id')),
-						sequelize.fn('lower', user.user_id)
+						sequelize.fn('lower', sequelize.col('email')),
+						sequelize.fn('lower', user.email)
 					)
 				]
 			}
@@ -177,7 +234,7 @@ router.post('/changePassword', function (req, res, next) {
 								},
 								{
 									where: {
-										user_id: user.user_id
+										user_id: data.user_id
 									},
 									transaction: t,
 									individualHooks: true
@@ -204,6 +261,10 @@ router.post('/changePassword', function (req, res, next) {
 router.post('/login', function (req, res, next) {
 	let user = req.body;
 
+		// //Read Image
+		// let buff = fs.readFileSync('images/user'+user.user_id+"front."+image_extension);
+		// let base64data = buff.toString('base64');
+
 	// CHECK IF THERE IS ANOTHER USER WITH THE SAME NAME
 	model.users
 		.findOne({
@@ -222,9 +283,41 @@ router.post('/login', function (req, res, next) {
 		})
 		.then(data => {
 			if (data) {
-
-				res.status(200).send('You are logged In to app');
-				return;
+				
+				Promise.resolve(model.address
+		.findOne({
+			where: {
+				$and: [
+					sequelize.where(
+						sequelize.fn('lower', sequelize.col('address_id')),
+						sequelize.fn('lower', data.address)
+					)
+				]
+			}
+		}))
+		.then(address => {
+			data.address = address
+			Promise.resolve(model.roles
+		.findOne({
+			where: {
+				$and: [
+					sequelize.where(
+						sequelize.fn('lower', sequelize.col('role_id')),
+						sequelize.fn('lower', data.role)
+					)
+				]
+			}
+		}))
+		.then(role => {
+			data.role = role
+				var token = createToken().compact();
+				res.append('token', [token])
+				res.status(200).send(data)
+				
+				// res.status(200).send('You are logged In to app');
+				// return;
+		})
+	})
 			}
 
 			else {
@@ -238,70 +331,70 @@ router.post('/login', function (req, res, next) {
 });
 
 
-router.post('/register', function (req, res, next) {
-	let user_detail = req.body.user;
-	let address_detail = req.body.address;
+// router.post('/register', function (req, res, next) {
+// 	let user_detail = req.body.user;
+// 	let address_detail = req.body.address;
 
-	// CHECK IF THE PROFILE EXISTS
-	model.roles
-		.findOne({
-			where: {
-				role_id: user_detail.role
-			}
-		})
-		.then(data => {
-			if (!data) {
-				res.send(400, 'Role not found');
-				return;
-			}
+// 	// CHECK IF THE PROFILE EXISTS
+// 	model.roles
+// 		.findOne({
+// 			where: {
+// 				role_id: user_detail.role
+// 			}
+// 		})
+// 		.then(data => {
+// 			if (!data) {
+// 				res.send(400, 'Role not found');
+// 				return;
+// 			}
 
-			// CHECK IF THERE IS ANOTHER USER WITH THE SAME NAME
-			model.users
-				.findOne({
-					where: {
-						$or: [
-							sequelize.where(
-								sequelize.fn('lower', sequelize.col('email')),
-								sequelize.fn('lower', user_detail.email)
-							),
-							sequelize.where(
-								sequelize.fn('lower', sequelize.col('mobile_no')),
-								sequelize.fn('lower', user_detail.mobile_no)
-							)
-						]
-					}
-				})
-				.then(data => {
-					if (data) {
-						res.status(400).send('There is another user with this Email or Mobile No');
-						return;
-					}
+// 			// CHECK IF THERE IS ANOTHER USER WITH THE SAME NAME
+// 			model.users
+// 				.findOne({
+// 					where: {
+// 						$or: [
+// 							sequelize.where(
+// 								sequelize.fn('lower', sequelize.col('email')),
+// 								sequelize.fn('lower', user_detail.email)
+// 							),
+// 							sequelize.where(
+// 								sequelize.fn('lower', sequelize.col('mobile_no')),
+// 								sequelize.fn('lower', user_detail.mobile_no)
+// 							)
+// 						]
+// 					}
+// 				})
+// 				.then(data => {
+// 					if (data) {
+// 						res.status(400).send('There is another user with this Email or Mobile No');
+// 						return;
+// 					}
 
-					trans.execTrans(res, t => {
-						return Promise.resolve(model.address
-							.create(address_detail, {
-								transaction: t
+// 					trans.execTrans(res, t => {
+// 						return Promise.resolve(model.address
+// 							.create(address_detail, {
+// 								transaction: t
 
-							}))
-							.then(address => {
+// 							}))
+// 							.then(address => {
 
-								user_detail.address = address.address_id
-								model.users
-									.create(user_detail, {
-										transaction: t
-									})
-									.then(user => {
-										t.commit();
-										res.status(200).send(user)
-										return
+// 								user_detail.address = address.address_id
+// 								model.users
+// 									.create(user_detail, {
+// 										transaction: t
+// 									})
+// 									.then(user => {
+// 										t.commit();
+// 										res.status(200).send('User Registered Successfully')
+// 										return
 
-									});
-							})
+// 									});
+// 							})
 
-					});
-				});
-		});
-});
+// 					});
+// 				});
+// 		});
+// });
 
 
 router.get('/createToken', function (req, res, next) {

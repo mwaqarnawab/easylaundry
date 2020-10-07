@@ -43,13 +43,37 @@ module.exports = function(sequelize, DataTypes) {
 				allowNull: true
             },
 			latitude: {
-				type: DataTypes.INTEGER,
+				type: DataTypes.STRING(100),
 				allowNull: true
             },
 			longitude: {
-				type: DataTypes.INTEGER,
+				type: DataTypes.STRING(100),
 				allowNull: true
-            }
+			},
+			laundry_type: {
+				type: DataTypes.STRING(100),
+				allowNull: true
+			},
+			cnic_front: {
+				type: DataTypes.BLOB('long'),
+				allowNull: true
+			},
+			cnic_back: {
+				type: DataTypes.BLOB('long'),
+				allowNull: true
+			},
+			cnic_front_image_extension:{
+				type: DataTypes.STRING(50),
+				allowNull: true
+			},
+			cnic_back_image_extension: {
+				type: DataTypes.STRING(50),
+				allowNull: true
+			},
+			cnic_no: {
+				type: DataTypes.STRING(100),
+				allowNull: true
+			},
             
 		},
 		{

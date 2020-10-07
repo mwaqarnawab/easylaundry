@@ -10,10 +10,12 @@
 	"author": "",
 	"license": "ISC",
 	"dependencies": {
+		"ba64": "^3.0.9",
 		"body-parser": "^1.18.3",
 		"cors": "^2.8.5",
 		"ejs": "^2.6.1",
 		"express": "^4.16.4",
+		"fs": "0.0.1-security",
 		"mysql2": "^1.5.3",
 		"njwt": "^0.4.0",
 		"secure-random": "^1.1.2",
