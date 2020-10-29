@@ -7,6 +7,7 @@ var mysql = require('mysql2');
 
 // CONTROLLERS
 var usersCtrl = require('./controllers/users');
+var servicesCtrl = require('./controllers/services')
 
 //CORS
 app.use(
@@ -79,6 +80,7 @@ app.get('/', function(req, res) {
 	res.send(400, 'Invalid URL');
 });
 app.use('/users', usersCtrl);
+app.use('/services', servicesCtrl);
 
 app.listen(3000, function() {
 	console.log('server running on port 3000', '');

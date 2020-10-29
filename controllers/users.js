@@ -84,9 +84,10 @@ router.post('/checkIfUserExist', function (req, res, next) {
 
 
 router.post('/register', function (req, res, next) {
+	req.body.user.role = parseInt(req.body.user.role)
 	let user_detail = req.body.user;
 	let address_detail = req.body.address;
-
+	console.log(address_detail.cnic_front)
 	cnic_front_image = ""
 	cnic_back_image = ""
 
@@ -164,24 +165,24 @@ router.post('/register', function (req, res, next) {
 							.then(address => {
 
 								user_detail.address = address.address_id
-								Promise.resolve(model.users
+								return Promise.resolve(model.users
 									.create(user_detail, {
 										transaction: t
 									}))
 									.then(user => {
 										
 										
-										//Write cnic front image
-										if(cnic_front_image != ""){
-											data_url = cnic_front_image;
-											ba64.writeImageSync("images/user"+user.user_id+"front", data_url);
-										}
+										// //Write cnic front image
+										// if(cnic_front_image != ""){
+										// 	data_url = cnic_front_image;
+										// 	ba64.writeImageSync("images/user"+user.user_id+"front", data_url);
+										// }
 
-										//Write cnic back image
-										if(cnic_back_image != ""){
-											data_url = cnic_back_image;
-											ba64.writeImageSync("images/user"+user.user_id+"back", data_url);
-										}
+										// //Write cnic back image
+										// if(cnic_back_image != ""){
+										// 	data_url = cnic_back_image;
+										// 	ba64.writeImageSync("images/user"+user.user_id+"back", data_url);
+										// }
 										
 										
 									
@@ -250,7 +251,40 @@ router.post('/changePassword', function (req, res, next) {
 				}
 			}
 			else {
-				res.status(400).send('No User Exist with this id');
+				res.status(400).send('No User Exist with this Email');
+				return;
+			}
+		});
+
+});
+
+
+router.post('/findMobileNoByEmail', function (req, res, next) {
+	let user = req.body;
+
+	// CHECK IF THERE IS USER WITH THIS EMAIL
+	model.users
+		.findOne({
+			where: {
+				$and: [
+					sequelize.where(
+						sequelize.fn('lower', sequelize.col('email')),
+						sequelize.fn('lower', user.email)
+					)
+				]
+			}
+		})
+		.then(data => {
+			if (data) {
+
+					result = {'mobile_no': data.mobile_no}
+					return res.status(200).send(result);
+					
+				}
+				
+			else {
+				result = {'err_msg': "No User Exist with this Email"}
+				res.status(400).send(result);
 				return;
 			}
 		});
