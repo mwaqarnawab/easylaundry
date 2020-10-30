@@ -51,6 +51,53 @@ router.get('/', function (req, res, next) {
 });
 
 
+router.post('/getUserById', function (req, res, next) {
+	let user = req.body;
+
+	// CHECK IF THERE IS ANOTHER USER WITH THE SAME NAME
+	Promise.resolve(model.users
+		.findOne({
+			where: {
+				$or: [
+					sequelize.where(
+						sequelize.fn('lower', sequelize.col('user_id')),
+						sequelize.fn('lower', user.user_id)
+					),
+					
+				]
+			}
+		}))
+		.then(data => {
+			if (data) {
+				data.password = ""
+				model.address
+		.findOne({
+			where: {
+				$or: [
+					sequelize.where(
+						sequelize.fn('lower', sequelize.col('address_id')),
+						sequelize.fn('lower', data.address)
+					),
+					
+				]
+			}
+		})
+		.then(address => {
+				data.address = address
+				result = { 'user': data }
+				res.status(200).send(result);
+				return;
+			})
+		}
+			else {
+				res.status(400).send('No User Found with this Id');
+				return;
+			}
+		});
+});
+
+
+
 router.post('/checkIfUserExist', function (req, res, next) {
 	let user = req.body;
 
@@ -81,7 +128,6 @@ router.post('/checkIfUserExist', function (req, res, next) {
 			}
 		});
 });
-
 
 router.post('/register', function (req, res, next) {
 	req.body.user.role = parseInt(req.body.user.role)
@@ -193,6 +239,89 @@ router.post('/register', function (req, res, next) {
 
 										t.commit();
 										res.status(200).send(user)
+										return
+
+									});
+							})
+
+					});
+				});
+		});
+});
+
+
+
+
+router.post('/update', function (req, res, next) {
+	
+	let user_detail = req.body.user;
+	let address_detail = req.body.address;
+			
+
+			// CHECK IF USER EXIST
+			model.users
+				.findOne({
+					where: {
+						$or: [
+							sequelize.where(
+								sequelize.fn('lower', sequelize.col('email')),
+								sequelize.fn('lower', user_detail.email)
+							),
+							// sequelize.where(
+							// 	sequelize.fn('lower', sequelize.col('mobile_no')),
+							// 	sequelize.fn('lower', user_detail.mobile_no)
+							// )
+						]
+					}
+				})
+				.then(data => {
+					if (data && data.user_id != user_detail.user_id) {
+						result = {'err_msg': 'There is another user with this Email'}
+						res.status(400).send(result);
+						return;
+					}
+					Promise.resolve(model.users
+				.findOne({
+					where: {
+						$or: [
+							sequelize.where(
+								sequelize.fn('lower', sequelize.col('user_id')),
+								sequelize.fn('lower', user_detail.user_id)
+							),
+						]
+					}
+				})).then(currentUser => {
+					if(!currentUser){
+						result = {'err_msg': 'There is no user with this Id'}
+						res.status(400).send(result);
+						return;
+					}
+
+					trans.execTrans(res, t => {
+						return Promise.resolve(model.address
+							.update(address_detail, 
+								
+								{
+									where: {
+										address_id: currentUser.address
+									},
+									transaction: t,
+									individualHooks: true
+								}))
+							.then(address => {
+
+								return Promise.resolve(model.users
+									.update(user_detail, {
+										where: {
+											user_id: user_detail.user_id
+										},
+										transaction: t,
+										individualHooks: true
+									}))
+									.then(updatedUser => {
+										t.commit();
+										result = {'msg': 'User Updated Successfully'}
+										res.status(200).send(result)
 										return
 
 									});

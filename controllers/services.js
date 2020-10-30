@@ -243,6 +243,76 @@ router.post('/updateService', function (req, res, next) {
 });
 
 
+
+router.get('/findAllCategories', function (req, res, next) {
+	// let user = req.body;
+
+	// CHECK IF THERE IS USER WITH THIS EMAIL
+
+	model.service_categories
+		.findAll({
+			
+		})
+		.then(data => {
+			if(data) {
+			result = { 'service_categories': data }
+						return res.status(200).send(result);
+			}
+
+			else {
+				result = { 'err_msg': "No Service Categories exists in database" }
+				res.status(400).send(result);
+				return;
+			}
+		});
+
+});
+
+
+router.post('/deleteService', function (req, res, next) {
+	// let user = req.body;
+
+	// CHECK IF THERE IS USER WITH THIS EMAIL
+
+	model.laundry_owner_services
+		.findOne({
+			where: {
+				$and: [
+					sequelize.where(
+						sequelize.fn('lower', sequelize.col('los_id')),
+						sequelize.fn('lower', req.body.los_id)
+					)
+				]
+			}
+		})
+		.then(data => {
+			if(data) {
+				model.laundry_owner_services
+		.destroy({
+			where: {
+				$and: [
+					sequelize.where(
+						sequelize.fn('lower', sequelize.col('los_id')),
+						sequelize.fn('lower', req.body.los_id)
+					)
+				]
+			}
+		})
+		.then(response => {
+			
+						return res.status(200).send("Service Deleted Successfully");
+			})
+		}
+
+			else {
+				result = { 'err_msg': "No such Service Exist for this Laundry Owner" }
+				res.status(400).send(result);
+				return;
+			}
+		});
+
+});
+
 router.post('/findByCategory', function (req, res, next) {
 	// let user = req.body;
 
@@ -316,6 +386,9 @@ router.post('/findByLaundryOwner', async function (req, res, next) {
 			}
 		}))
 		.then(data => { 
+			if(!data){
+				return res.status(400).send("No Service Exist for this Laundry Owner");
+			}
 			laundry_owner_service = data
 			// laundry_ser = laundry_owner_service
 		})
@@ -450,6 +523,9 @@ router.post('/findByServiceId', function (req, res, next) {
 			}
 		}))
 		.then(data => { 
+			if(!data){
+				return res.status(400).send("No Service Exist With this Id");
+			}
 			laundry_owner_service = data
 
 			service_id = laundry_owner_service.service
