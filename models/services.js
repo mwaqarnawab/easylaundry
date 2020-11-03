@@ -19,14 +19,6 @@ module.exports = function(sequelize, DataTypes) {
 			service_name: {
 				type: DataTypes.STRING(200),
 				allowNull: true
-			},
-			description: {
-				type: DataTypes.STRING(500),
-				allowNull: true
-			},
-			charges: {
-				type: DataTypes.INTEGER,
-				allowNull: true
 			}
 		},
 		{

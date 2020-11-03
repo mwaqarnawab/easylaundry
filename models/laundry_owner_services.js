@@ -24,6 +24,14 @@ module.exports = function(sequelize, DataTypes) {
 					key: 'service_id'
 				}
 			},
+			description: {
+				type: DataTypes.STRING(500),
+				allowNull: true
+			},
+			charges: {
+				type: DataTypes.INTEGER,
+				allowNull: true
+			}
 		},
 		{
 			timestamps: false,

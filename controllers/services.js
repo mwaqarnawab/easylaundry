@@ -138,7 +138,7 @@ router.post('/add', function (req, res, next) {
 
 
 router.post('/addService', function (req, res, next) {
-	 let request = req.body.service;
+	let request = req.body.service;
 
 	// CHECK IF THERE IS ANOTHER USER WITH THE SAME NAME
 	model.laundry_owner_services
@@ -159,27 +159,27 @@ router.post('/addService', function (req, res, next) {
 		})
 		.then(data => {
 			if (data) {
-				
-					res.status(400).send('The Service for this Laundry owner already Exist');
-					return;
-				}
-				else {
 
-					
-					trans.execTrans(res, t => {
-						return Promise.resolve(model.laundry_owner_services
-							.create(request, {
-								transaction: t
-							}))
-							.then(service => {
-								t.commit();
-								res.status(200).send('Service Added Successfully')
-								return
+				res.status(400).send('The Service for this Laundry owner already Exist');
+				return;
+			}
+			else {
 
-							});
-					})
-				}
-			
+
+				trans.execTrans(res, t => {
+					return Promise.resolve(model.laundry_owner_services
+						.create(request, {
+							transaction: t
+						}))
+						.then(service => {
+							t.commit();
+							res.status(200).send('Service Added Successfully')
+							return
+
+						});
+				})
+			}
+
 		});
 
 });
@@ -188,57 +188,58 @@ router.post('/addService', function (req, res, next) {
 router.post('/updateService', function (req, res, next) {
 	let request = req.body.service;
 
-   // CHECK IF THERE IS ANOTHER USER WITH THE SAME NAME
-   model.laundry_owner_services
-	   .findOne({
-		   where: {
-			   $and: [
-				   sequelize.where(
-					   sequelize.fn('lower', sequelize.col('service')),
-					   sequelize.fn('lower', request.service)
-				   ),
-				   sequelize.where(
-					   sequelize.fn('lower', sequelize.col('laundry_owner')),
-					   sequelize.fn('lower', request.laundry_owner)
-				   ),
+	// CHECK IF THERE IS ANOTHER USER WITH THE SAME NAME
+	//    model.laundry_owner_services
+	// 	   .findOne({
+	// 		   where: {
+	// 			   $and: [
+	// 				   sequelize.where(
+	// 					   sequelize.fn('lower', sequelize.col('service')),
+	// 					   sequelize.fn('lower', request.service)
+	// 				   ),
+	// 				   sequelize.where(
+	// 					   sequelize.fn('lower', sequelize.col('laundry_owner')),
+	// 					   sequelize.fn('lower', request.laundry_owner)
+	// 				   ),
 
-			   ]
-		   }
-	   })
-	   .then(data => {
-		   if (data) {
-			   
-				   res.status(400).send('The Service for this Laundry owner already Exist');
-				   return;
-			   }
-			   else {
+	// 			   ]
+	// 		   }
+	// 	   })
+	// 	   .then(data => {
+	// 		   if (data) {
 
-				   
-				   trans.execTrans(res, t => {
-					   return Promise.resolve(model.laundry_owner_services
+	// 				   res.status(400).send('The Service for this Laundry owner already Exist');
+	// 				   return;
+	// 			   }
+	// 			   else {
 
-						.update(
-							{
-								service: request.service,
-							},
-							{
-								where: {
-									los_id: request.los_id
-								},
-								transaction: t,
-								individualHooks: true
-							}
-						))
-						   .then(service => {
-							   t.commit();
-							   res.status(200).send('Service Updated Successfully')
-							   return
 
-						   });
-				   })
-			   }
-		   
-	   });
+	trans.execTrans(res, t => {
+		return Promise.resolve(model.laundry_owner_services
+
+			.update(
+				{
+					description: request.description,
+					charges: request.charges
+				},
+				{
+					where: {
+						los_id: request.los_id
+					},
+					transaction: t,
+					individualHooks: true
+				}
+			))
+			.then(service => {
+				t.commit();
+				res.status(200).send('Service Updated Successfully')
+				return
+
+			});
+	})
+	//    }
+
+	//    });
 
 });
 
@@ -251,12 +252,12 @@ router.get('/findAllCategories', function (req, res, next) {
 
 	model.service_categories
 		.findAll({
-			
+
 		})
 		.then(data => {
-			if(data) {
-			result = { 'service_categories': data }
-						return res.status(200).send(result);
+			if (data) {
+				result = { 'service_categories': data }
+				return res.status(200).send(result);
 			}
 
 			else {
@@ -286,23 +287,23 @@ router.post('/deleteService', function (req, res, next) {
 			}
 		})
 		.then(data => {
-			if(data) {
+			if (data) {
 				model.laundry_owner_services
-		.destroy({
-			where: {
-				$and: [
-					sequelize.where(
-						sequelize.fn('lower', sequelize.col('los_id')),
-						sequelize.fn('lower', req.body.los_id)
-					)
-				]
-			}
-		})
-		.then(response => {
-			
+					.destroy({
+						where: {
+							$and: [
+								sequelize.where(
+									sequelize.fn('lower', sequelize.col('los_id')),
+									sequelize.fn('lower', req.body.los_id)
+								)
+							]
+						}
+					})
+					.then(response => {
+
 						return res.status(200).send("Service Deleted Successfully");
-			})
-		}
+					})
+			}
 
 			else {
 				result = { 'err_msg': "No such Service Exist for this Laundry Owner" }
@@ -343,11 +344,11 @@ router.post('/findByCategory', function (req, res, next) {
 							]
 						}
 					}).then(category => {
-						
+
 						var i;
-for (i = 0; i < data.length; i++) {
-  data[i].service_category = category;
-}
+						for (i = 0; i < data.length; i++) {
+							data[i].service_category = category;
+						}
 						// data.service_category = category
 						console.log(data)
 						result = { 'services': data }
@@ -366,7 +367,7 @@ for (i = 0; i < data.length; i++) {
 
 });
 
-
+const waitFor = (ms) => new Promise(r => setTimeout(r, ms));
 
 router.post('/findByLaundryOwner', async function (req, res, next) {
 	// let user = req.body;
@@ -385,124 +386,185 @@ router.post('/findByLaundryOwner', async function (req, res, next) {
 				]
 			}
 		}))
-		.then(data => { 
-			if(!data){
+		.then(data => {
+			if (!data || data.length <= 0) {
 				return res.status(400).send("No Service Exist for this Laundry Owner");
 			}
-			laundry_owner_service = data
+			else {
+				laundry_owner_service = data
+				resolveLaundryOwnerServiceData(req, res, laundry_owner_service)
+				// console.log(laundry_owner_service)
+			}
 			// laundry_ser = laundry_owner_service
 		})
+
 		
-		// var i;
-		// for(i=0; i<laundry_owner_service.length; i++){
-			laundry_owner_service.forEach(myFunction);
-			function myFunction(los, i){
-			lo_id = los.laundry_owner 
-			service_id = los.service
-			
-			// console.log(laundry_ser)
-			 model.users
-				.findOne({
-					where: {
-						$and: [
-							sequelize.where(
-								sequelize.fn('lower', sequelize.col('user_id')),
-								sequelize.fn('lower', req.body.laundry_owner)
-							)
-						]
-					}
-				})
-				.then(user => { 
-					// console.log(laundry_ser)
-					los.laundry_owner = user
+	
+});
 
-					model.address
-						.findOne({
-							where: {
-								$and: [
-									sequelize.where(
-										sequelize.fn('lower', sequelize.col('address_id')),
-										sequelize.fn('lower', user.address)
-									)
-								]
-							}
-						}).then(address => {
-							los.laundry_owner.address = address
-					 model.services
-						.findOne({
-							where: {
-								$and: [
-									sequelize.where(
-										sequelize.fn('lower', sequelize.col('service_id')),
-										sequelize.fn('lower', service_id)
-									)
-								]
-							}
-						}).then(service => {
-							los.service = service
 
-							model.service_categories
-							.findOne({
-								where: {
-									$and: [
-										sequelize.where(
-											sequelize.fn('lower', sequelize.col('category_id')),
-											sequelize.fn('lower', service.service_category)
-										)
-									]
-								}
-							}).then(category => {
-								los.service.service_category = category
 
-							if(i+1 == laundry_owner_service.length){
-							result = { 'services': laundry_owner_service }
-										return res.status(200).send(result);
-							}
-					
-				})
-			})
-			})
-			})
-		}
+async function resolveLaundryOwnerServiceData(req, res, laundry_owner_service) {
 
-		// console.log(data)
-						
 
-// 			if (data) {
-// 				model.service_categories
+  for (let i = 0; i < laundry_owner_service.length; i++) {
+    // asyncForEach(laundry_owner_service, async (los) => {
+    // await waitFor(50);
+    // laundry_owner_service.forEach(myFunction);
+    // async function myFunction(los, i) {
+
+    // await Promise
+    // console.log(i)
+    lo_id = laundry_owner_service[i].laundry_owner
+    service_id = laundry_owner_service[i].service
+    console.log(service_id)
+
+
+    try {
+      const user = await model.users
+      .findOne({
+        where: {
+          $and: [
+            sequelize.where(
+              sequelize.fn('lower', sequelize.col('user_id')),
+              sequelize.fn('lower', req.body.laundry_owner)
+            )
+          ]
+        }
+      });
+      laundry_owner_service[i].laundry_owner = user
+      const address = await model.address
+      .findOne({
+        where: {
+          $and: [
+            sequelize.where(
+              sequelize.fn('lower', sequelize.col('address_id')),
+              sequelize.fn('lower', user.address)
+            )
+          ]
+        }
+      });
+      laundry_owner_service[i].laundry_owner.address = address
+
+      const service = await model.services
+              .findOne({
+                where: {
+                  $and: [
+                    sequelize.where(
+                      sequelize.fn('lower', sequelize.col('service_id')),
+                      sequelize.fn('lower', service_id)
+                    )
+                  ]
+                }
+              })
+      laundry_owner_service[i].service = service
+
+      const category = await model.service_categories
+      .findOne({
+        where: {
+          $and: [
+            sequelize.where(
+              sequelize.fn('lower', sequelize.col('category_id')),
+              sequelize.fn('lower', service.service_category)
+            )
+          ]
+        }
+      })
+      laundry_owner_service[i].service.service_category = category;
+
+
+    } catch (error) {
+      res.status(400).send(error);
+    }
+  }
+
+  const result = { 'services': laundry_owner_service }
+  return res.status(200).send(result);
+
+}
+
+// async function resolveLaundryOwnerServiceData(req, res, laundry_owner_service) {
+
+
+// 	var i;
+// 	for (i = 0; i < laundry_owner_service.length; i++) {
+// 		// asyncForEach(laundry_owner_service, async (los) => {
+// 		// await waitFor(50);
+// 		// laundry_owner_service.forEach(myFunction);
+// 		// async function myFunction(los, i) {
+
+// 		// await Promise	
+// 		// console.log(i)
+// 		lo_id = laundry_owner_service[i].laundry_owner
+// 		service_id = laundry_owner_service[i].service
+// 		console.log(service_id)
+
+// 		// console.log(laundry_ser)
+// 		await Promise.resolve(model.users
+// 			.findOne({
+// 				where: {
+// 					$and: [
+// 						sequelize.where(
+// 							sequelize.fn('lower', sequelize.col('user_id')),
+// 							sequelize.fn('lower', req.body.laundry_owner)
+// 						)
+// 					]
+// 				}
+// 			})
+// 			.then(user => {
+// 				// console.log(laundry_ser)
+// 				laundry_owner_service[i].laundry_owner = user
+
+// 				Promise.resolve(model.address
 // 					.findOne({
 // 						where: {
 // 							$and: [
 // 								sequelize.where(
-// 									sequelize.fn('lower', sequelize.col('category_id')),
-// 									sequelize.fn('lower', req.body.category_id)
+// 									sequelize.fn('lower', sequelize.col('address_id')),
+// 									sequelize.fn('lower', user.address)
 // 								)
 // 							]
 // 						}
-// 					}).then(category => {
-						
-// 						var i;
-// for (i = 0; i < data.length; i++) {
-//   data[i].service_category = category;
-// }
-// 						data.service_category = category
-// 						console.log(data)
-// 						result = { 'services': data }
-// 						return res.status(200).send(result);
+// 					})).then(address => {
+// 						laundry_owner_service[i].laundry_owner.address = address
+// 						Promise.resolve(model.services
+// 							.findOne({
+// 								where: {
+// 									$and: [
+// 										sequelize.where(
+// 											sequelize.fn('lower', sequelize.col('service_id')),
+// 											sequelize.fn('lower', service_id)
+// 										)
+// 									]
+// 								}
+// 							})).then(service => {
+// 								laundry_owner_service[i].service = service
+
+// 								Promise.resolve(model.service_categories
+// 									.findOne({
+// 										where: {
+// 											$and: [
+// 												sequelize.where(
+// 													sequelize.fn('lower', sequelize.col('category_id')),
+// 													sequelize.fn('lower', service.service_category)
+// 												)
+// 											]
+// 										}
+// 									})).then(category => {
+// 										laundry_owner_service[i].service.service_category = category
+
+// 										if (i + 1 == laundry_owner_service.length) {
+// 											result = { 'services': laundry_owner_service }
+// 											return res.status(200).send(result);
+// 										}
+
+// 									})
+// 							})
 // 					})
+// 			}))
+// 	}
 
-
-// 			}
-
-// 			else {
-// 				result = { 'err_msg': "No Service(s) exists in this category" }
-// 				res.status(400).send(result);
-// 				return;
-// 			}
-// 		});
-
-});
-
+// }
 
 
 router.post('/findByServiceId', function (req, res, next) {
@@ -522,16 +584,16 @@ router.post('/findByServiceId', function (req, res, next) {
 				]
 			}
 		}))
-		.then(data => { 
-			if(!data){
+		.then(data => {
+			if (!data) {
 				return res.status(400).send("No Service Exist With this Id");
 			}
 			laundry_owner_service = data
 
 			service_id = laundry_owner_service.service
-			
+
 			// console.log(laundry_ser)
-			 model.users
+			model.users
 				.findOne({
 					where: {
 						$and: [
@@ -542,7 +604,7 @@ router.post('/findByServiceId', function (req, res, next) {
 						]
 					}
 				})
-				.then(user => { 
+				.then(user => {
 					// console.log(laundry_ser)
 					laundry_owner_service.laundry_owner = user
 
@@ -558,40 +620,40 @@ router.post('/findByServiceId', function (req, res, next) {
 							}
 						}).then(address => {
 							laundry_owner_service.laundry_owner.address = address
-					 model.services
-						.findOne({
-							where: {
-								$and: [
-									sequelize.where(
-										sequelize.fn('lower', sequelize.col('service_id')),
-										sequelize.fn('lower', service_id)
-									)
-								]
-							}
-						}).then(service => {
-							laundry_owner_service.service = service
+							model.services
+								.findOne({
+									where: {
+										$and: [
+											sequelize.where(
+												sequelize.fn('lower', sequelize.col('service_id')),
+												sequelize.fn('lower', service_id)
+											)
+										]
+									}
+								}).then(service => {
+									laundry_owner_service.service = service
 
-							model.service_categories
-							.findOne({
-								where: {
-									$and: [
-										sequelize.where(
-											sequelize.fn('lower', sequelize.col('category_id')),
-											sequelize.fn('lower', service.service_category)
-										)
-									]
-								}
-							}).then(category => {
-								laundry_owner_service.service.service_category = category
+									model.service_categories
+										.findOne({
+											where: {
+												$and: [
+													sequelize.where(
+														sequelize.fn('lower', sequelize.col('category_id')),
+														sequelize.fn('lower', service.service_category)
+													)
+												]
+											}
+										}).then(category => {
+											laundry_owner_service.service.service_category = category
 
-							result = { 'service': laundry_owner_service }
-										return res.status(200).send(result);
-							
-					
+											result = { 'service': laundry_owner_service }
+											return res.status(200).send(result);
+
+
+										})
+								})
+						})
 				})
-			})
-			})
-			})
 		})
 });
 

@@ -97,6 +97,147 @@ router.post('/getUserById', function (req, res, next) {
 });
 
 
+router.post('/getAllLaundryOwners', async function (req, res, next) {
+	let user = req.body;
+	laundryOwners = []
+
+	// CHECK IF THERE IS ANOTHER USER WITH THE SAME NAME
+	await Promise.resolve(model.users
+		.findAll(
+			{
+				where: {
+					$or: [
+						sequelize.where(
+							sequelize.fn('lower', sequelize.col('role')),
+							sequelize.fn('lower', 2)
+						),
+						
+					]
+				}
+			}
+		))
+		.then(data => {
+			if (data) {
+				laundryOwners = data
+			}
+		
+			else {
+				res.status(400).send('No Laundry Owner Exist');
+				return;
+			}
+
+		})
+
+			
+			laundryOwners.forEach(myFunction);
+			function myFunction(laundryOwner, i){
+
+
+				Promise.resolve(model.address
+		.findOne({
+			where: {
+				$or: [
+					sequelize.where(
+						sequelize.fn('lower', sequelize.col('address_id')),
+						sequelize.fn('lower', laundryOwner.address)
+					),
+					
+				]
+			}
+		}))
+		.then(address => {
+			laundryOwner.address = address
+			laundryOwner.password = ""
+			if(i+1 == laundryOwners.length){
+				result = { 'laundryOwners': laundryOwners }
+				return res.status(200).send(result);
+
+			}
+				
+			})
+
+		}
+
+		
+			
+		})
+		
+			
+		
+
+
+		router.post('/getAllLaundryOwnersByName', async function (req, res, next) {
+			let laundryName = req.body.laundryName;
+			laundryOwners = []
+		
+			// CHECK IF THERE IS ANOTHER USER WITH THE SAME NAME
+			await Promise.resolve(model.users
+				.findAll(
+					{
+						where: {
+							$or: [
+								sequelize.where(
+									sequelize.fn('lower', sequelize.col('role')),
+									sequelize.fn('lower', 2)
+								),
+								
+							]
+						}
+					}
+				))
+				.then(data => {
+					if (data) {
+						laundryOwners = data
+					}
+				
+					else {
+						res.status(400).send('No Laundry Owner Exist');
+						return;
+					}
+		
+				})
+		
+					
+					laundryOwners.forEach(myFunction);
+					function myFunction(laundryOwner, i){
+		
+		
+						Promise.resolve(model.address
+				.findOne({
+					where: {
+						$or: [
+							sequelize.where(
+								sequelize.fn('lower', sequelize.col('address_id')),
+								sequelize.fn('lower', laundryOwner.address)
+							),
+							
+						]
+					}
+				}))
+				.then(address => {
+					if(address.laundry_name.includes(laundryName)){
+						laundryOwner.address = address
+						laundryOwner.password = ""
+					}
+					else{
+						delete laundryOwners[i]
+					}
+					
+					if(i+1 == laundryOwners.length){
+						result = { 'laundryOwners': laundryOwners }
+						return res.status(200).send(result);
+		
+					}
+						
+					})
+		
+				}
+		
+				
+					
+				})
+				
+
 
 router.post('/checkIfUserExist', function (req, res, next) {
 	let user = req.body;
