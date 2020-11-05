@@ -197,47 +197,47 @@ router.post('/getAllLaundryOwners', async function (req, res, next) {
 		
 				})
 		
+				resolveLaundryOwnerData(req, res, laundryOwners, laundryName);
 					
-					laundryOwners.forEach(myFunction);
-					function myFunction(laundryOwner, i){
 		
-		
-						Promise.resolve(model.address
-				.findOne({
-					where: {
-						$or: [
-							sequelize.where(
-								sequelize.fn('lower', sequelize.col('address_id')),
-								sequelize.fn('lower', laundryOwner.address)
-							),
-							
-						]
-					}
-				}))
-				.then(address => {
-					if(address.laundry_name.includes(laundryName)){
-						laundryOwner.address = address
-						laundryOwner.password = ""
-					}
-					else{
-						delete laundryOwners[i]
-					}
-					
-					if(i+1 == laundryOwners.length){
-						result = { 'laundryOwners': laundryOwners }
-						return res.status(200).send(result);
-		
-					}
-						
-					})
-		
-				}
-		
-				
-					
-				})
+			})
 				
 
+async function resolveLaundryOwnerData(req, res, laundryOwners, laundryName) {
+
+
+	for (let i = 0; i < laundryOwners.length; i++) {
+
+		const address = await model.address
+		.findOne({
+			where: {
+				$or: [
+					sequelize.where(
+						sequelize.fn('lower', sequelize.col('address_id')),
+						sequelize.fn('lower', laundryOwners[i].address)
+					),
+					
+				]
+			}
+		})
+
+		if(address.laundry_name.toLowerCase().includes(laundryName.toLowerCase())){
+			laundryOwners[i].address = address
+			laundryOwners[i].password = ""
+		}
+		else{
+			delete laundryOwners[i]
+		}
+
+		
+
+	}
+	var filtered = laundryOwners.filter(function (el) {
+		return el != null;
+	  });
+	result = { 'laundryOwners': filtered }
+	return res.status(200).send(result);
+}
 
 router.post('/checkIfUserExist', function (req, res, next) {
 	let user = req.body;
