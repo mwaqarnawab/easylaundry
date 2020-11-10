@@ -414,12 +414,16 @@ router.post('/addTaxPercentage',async function (req, res, next) {
 	pntn_certificate = ""
 
 	
-	pntn_certificate_extension = ""
+	pntn_certificate_extension = tax_detail.pntn_filename
+	extension = tax_detail.pntn_filename.split(".")[1]
+	tax_detail.pntn_certificate_extension = extension
+	console.log(extension)
 
 	if(tax_detail.pntn_certificate && tax_detail.pntn_certificate != "" && tax_detail.pntn_certificate != null){
 		pntn_certificate = tax_detail.pntn_certificate
-		image_extension = pntn_certificate.substring("data:image/".length, pntn_certificate.indexOf(";base64"))
-		tax_detail.pntn_certificate_extension = image_extension
+		pntn_certificate = "data:image/" + extension + ";base64," + pntn_certificate
+		// image_extension = pntn_certificate.substring("data:image/".length, pntn_certificate.indexOf(";base64"))
+		// tax_detail.pntn_certificate_extension = image_extension
 		tax_detail.pntn_certificate = null
 	}
 		
