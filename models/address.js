@@ -62,6 +62,18 @@ module.exports = function(sequelize, DataTypes) {
 				type: DataTypes.BLOB('long'),
 				allowNull: true
 			},
+			// pntn_certificate: {
+			// 	type: DataTypes.BLOB('long'),
+			// 	allowNull: true
+			// },
+			// tax_percentage: {
+			// 	type: DataTypes.STRING(50),
+			// 	allowNull: true
+			// },
+			// pntn_certificate_extension:{
+			// 	type: DataTypes.STRING(50),
+			// 	allowNull: true
+			// },
 			cnic_front_image_extension:{
 				type: DataTypes.STRING(50),
 				allowNull: true

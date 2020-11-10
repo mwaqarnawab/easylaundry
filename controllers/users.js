@@ -274,12 +274,14 @@ router.post('/register', function (req, res, next) {
 	req.body.user.role = parseInt(req.body.user.role)
 	let user_detail = req.body.user;
 	let address_detail = req.body.address;
-	console.log(address_detail.cnic_front)
+	// console.log(address_detail.cnic_front)
 	cnic_front_image = ""
 	cnic_back_image = ""
+	// pntn_certificate = ""
 
 	cnic_front_image_extension = ""
 	cnic_back_image_extension = ""
+	// pntn_certificate_extension = ""
 
 	if(address_detail.cnic_front && address_detail.cnic_front != "" && address_detail.cnic_front != null){
 		cnic_front_image = address_detail.cnic_front
@@ -294,6 +296,13 @@ router.post('/register', function (req, res, next) {
 		address_detail.cnic_back_image_extension = image_extension
 		address_detail.cnic_back = ""
 	}
+
+	// if(address_detail.pntn_certificate && address_detail.pntn_certificate != "" && address_detail.pntn_certificate != null){
+	// 	pntn_certificate = address_detail.pntn_certificate
+	// 	image_extension = pntn_certificate.substring("data:image/".length, pntn_certificate.indexOf(";base64"))
+	// 	address_detail.pntn_certificate_extension = image_extension
+	// 	address_detail.pntn_certificate = ""
+	// }
 	
 
 	
@@ -337,14 +346,14 @@ router.post('/register', function (req, res, next) {
 						]
 					}
 				})
-				.then(data => {
-					if (data) {
+				.then(userdata => {
+					if (userdata) {
 						res.status(400).send('There is another user with this Email');
 						return;
 					}
 
 					trans.execTrans(res, t => {
-						return Promise.resolve(model.address
+						 return Promise.resolve(model.address
 							.create(address_detail, {
 								transaction: t
 
@@ -352,7 +361,7 @@ router.post('/register', function (req, res, next) {
 							.then(address => {
 
 								user_detail.address = address.address_id
-								return Promise.resolve(model.users
+								 Promise.resolve(model.users
 									.create(user_detail, {
 										transaction: t
 									}))
@@ -371,6 +380,11 @@ router.post('/register', function (req, res, next) {
 										// 	ba64.writeImageSync("images/user"+user.user_id+"back", data_url);
 										// }
 										
+										// //Write pntn certificate image
+										// if(pntn_certificate != ""){
+										// 	data_url = pntn_certificate;
+										// 	ba64.writeImageSync("images/user"+user.user_id+"pntn", data_url);
+										// }
 										
 									
 
@@ -390,6 +404,125 @@ router.post('/register', function (req, res, next) {
 		});
 });
 
+
+
+router.post('/addTaxPercentage',async function (req, res, next) {
+
+	let tax_detail = req.body.tax_detail;
+
+	
+	pntn_certificate = ""
+
+	
+	pntn_certificate_extension = ""
+
+	if(tax_detail.pntn_certificate && tax_detail.pntn_certificate != "" && tax_detail.pntn_certificate != null){
+		pntn_certificate = tax_detail.pntn_certificate
+		image_extension = pntn_certificate.substring("data:image/".length, pntn_certificate.indexOf(";base64"))
+		tax_detail.pntn_certificate_extension = image_extension
+		tax_detail.pntn_certificate = null
+	}
+		
+	// let buff = new Buffer.from(data, 'base64');
+	// fs.writeFileSync('stack-abuse-logo-out.png', buff);
+
+	// let buff = fs.readFileSync('images/stack-abuse-logo-out');
+	// let base64data = buff.toString('base64');
+	// res.status(200).send(base64data);
+	// return
+
+		const tax = await model.tax_details
+		.create(tax_detail)
+		
+		if(pntn_certificate != ""){
+			const data_url = pntn_certificate;
+			const abc = await ba64.writeImageSync("images/user"+tax_detail.user+"pntn", data_url);
+		}
+				// let buff = new Buffer.from(cnic_front_image, 'base64');
+				// fs.writeFileSync('images/user'+user.user_id+'front.'+image_extension, buff);
+
+				// t.commit();
+				result = {"tax_detail" : tax, "msg": "Tax Detail Added Successfully"}
+				res.status(200).send(result)
+				return
+		
+});
+
+
+router.post('/updateTaxPercentage',async function (req, res, next) {
+
+	let tax_detail = req.body.tax_detail;
+
+
+
+	const tax = await model.tax_details.update(tax_detail, 
+			
+		{
+		where: {
+			td_id: tax_detail.td_id
+		}
+	})
+
+		result = {"msg": "Tax Detail Updated Successfully"}
+		res.status(200).send(result)
+		return
+					
+							
+		
+});
+
+
+
+router.post('/getTaxPercentageByUserId',async function (req, res, next) {
+
+	let user_id = req.body.user_id;
+
+
+
+	const tax = await model.tax_details.findOne(
+
+
+		{
+			where: {
+				$or: [
+					sequelize.where(
+						sequelize.fn('lower', sequelize.col('user')),
+						sequelize.fn('lower', user_id)
+					),
+				]
+			}
+		})
+
+		result = {"tax_detail": tax}
+		res.status(200).send(result)
+		return
+					
+							
+		
+});
+
+
+router.post('/deleteTaxPercentage',async function (req, res, next) {
+
+	let td_id = req.body.td_id;
+
+
+
+	const tax = await model.tax_details.destroy(
+
+		{
+			where: {
+				td_id: td_id
+			}
+		})
+
+		result = {"msg": "Tax Details deleted successfully"}
+		res.status(200).send(result)
+		return
+					
+							
+		
+});
 
 
 
