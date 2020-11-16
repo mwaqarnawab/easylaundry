@@ -128,36 +128,29 @@ router.post('/getAllLaundryOwners', async function (req, res, next) {
 
 		})
 
-			
-			laundryOwners.forEach(myFunction);
-			function myFunction(laundryOwner, i){
 
+		for (let i = 0; i < laundryOwners.length; i++) {
 
-				Promise.resolve(model.address
+			const address = await model.address
 		.findOne({
 			where: {
 				$or: [
 					sequelize.where(
 						sequelize.fn('lower', sequelize.col('address_id')),
-						sequelize.fn('lower', laundryOwner.address)
+						sequelize.fn('lower', laundryOwners[i].address)
 					),
 					
 				]
 			}
-		}))
-		.then(address => {
-			laundryOwner.address = address
-			laundryOwner.password = ""
-			if(i+1 == laundryOwners.length){
-				result = { 'laundryOwners': laundryOwners }
-				return res.status(200).send(result);
-
-			}
-				
-			})
-
+		})
+		
+			laundryOwners[i].address = address
+			laundryOwners[i].password = ""
+			
+			
 		}
-
+		result = { 'laundryOwners': laundryOwners }
+		return res.status(200).send(result);
 		
 			
 		})
@@ -964,4 +957,6 @@ router.delete('/', function (req, res, next) {
 			});
 		});
 });
+
+
 module.exports = router;

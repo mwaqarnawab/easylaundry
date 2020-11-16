@@ -483,6 +483,10 @@ async function resolveLaundryOwnerServiceData(req, res, laundry_owner_service) {
 
 }
 
+
+
+
+
 // async function resolveLaundryOwnerServiceData(req, res, laundry_owner_service) {
 
 
