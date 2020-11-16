@@ -147,7 +147,7 @@ async function resolveCustomerOrders(req, res, orders) {
                         ]
                     }
                 })
-            orders[i].los.laundry_owner.laundry_address = laundry_address;
+            orders[i].los.laundry_owner.address = laundry_address;
 
 
 
@@ -399,7 +399,7 @@ async function getOrderDetails(req, res, orders) {
                         ]
                     }
                 })
-            orders.los.laundry_owner.laundry_address = laundry_address;
+            orders.los.laundry_owner.address = laundry_address;
 
 
 
@@ -627,7 +627,7 @@ async function resolveLaundryOrders(req, res, orders, laundry_owner_id) {
                         ]
                     }
                 })
-            orders[i].los.laundry_owner.laundry_address = laundry_address;
+            orders[i].los.laundry_owner.address = laundry_address;
 
 
 
@@ -879,7 +879,7 @@ async function resolveOrdersByStatus(req, res, orders, laundry_owner_id) {
                         ]
                     }
                 })
-            orders[i].los.laundry_owner.laundry_address = laundry_address;
+            orders[i].los.laundry_owner.address = laundry_address;
 
 
 
