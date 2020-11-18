@@ -933,4 +933,201 @@ async function resolveOrdersByStatus(req, res, orders, laundry_owner_id) {
 
 }
 
+
+
+
+
+
+
+router.post('/getOrdersByStatusAndCustomerId', async function (req, res, next) {
+    let order_status = req.body.order_status;
+    let customer_id = req.body.customer_id;
+ 
+
+    // CHECK IF THERE IS USER WITH THIS EMAIL
+    orders = []
+    // laundry_ser = []
+    await Promise.resolve(model.orders
+        .findAll({
+            where: {
+                $and: [
+                    sequelize.where(
+                        sequelize.fn('lower', sequelize.col('order_status')),
+                        sequelize.fn('lower', parseInt(order_status))
+                    ),
+                    sequelize.where(
+                        sequelize.fn('lower', sequelize.col('customer')),
+                        sequelize.fn('lower', parseInt(customer_id))
+                    )
+
+                ]
+            }
+        }))
+        .then(data => {
+            if (!data || data.length <= 0) {
+                result = {"msg": "No Order Exist for this Customer"}
+                return res.status(400).send(result);
+            }
+            else {
+                orders = data
+                resolveOrdersByStatusCustomer(req, res, orders)
+                // console.log(laundry_owner_service)
+            }
+            // laundry_ser = laundry_owner_service
+        })
+
+
+
+});
+
+
+
+async function resolveOrdersByStatusCustomer(req, res, orders) {
+
+
+    for (let i = 0; i < orders.length; i++) {
+
+        customer_id = orders[i].customer
+        laundry_owner_service_id = orders[i].los
+        order_status_id = orders[i].order_status
+
+
+
+        try {
+
+            const laundry_owner_service = await model.laundry_owner_services
+                .findOne({
+                    where: {
+                        $and: [
+                            sequelize.where(
+                                sequelize.fn('lower', sequelize.col('los_id')),
+                                sequelize.fn('lower', laundry_owner_service_id)
+                            )
+                        ]
+                    }
+                });
+        
+            orders[i].los = laundry_owner_service
+
+            const order_status = await model.order_status
+                .findOne({
+                    where: {
+                        $and: [
+                            sequelize.where(
+                                sequelize.fn('lower', sequelize.col('order_status_id')),
+                                sequelize.fn('lower', order_status_id)
+                            )
+                        ]
+                    }
+                });
+            orders[i].order_status = order_status
+
+            
+
+            const service = await model.services
+                .findOne({
+                    where: {
+                        $and: [
+                            sequelize.where(
+                                sequelize.fn('lower', sequelize.col('service_id')),
+                                sequelize.fn('lower', laundry_owner_service.service)
+                            )
+                        ]
+                    }
+                })
+            orders[i].los.service = service
+
+            const category = await model.service_categories
+                .findOne({
+                    where: {
+                        $and: [
+                            sequelize.where(
+                                sequelize.fn('lower', sequelize.col('category_id')),
+                                sequelize.fn('lower', service.service_category)
+                            )
+                        ]
+                    }
+                })
+            orders[i].los.service.service_category = category;
+
+
+
+
+            const laundry_owner = await model.users
+                .findOne({
+                    where: {
+                        $and: [
+                            sequelize.where(
+                                sequelize.fn('lower', sequelize.col('user_id')),
+                                sequelize.fn('lower', laundry_owner_service.laundry_owner)
+                            )
+                        ]
+                    }
+                })
+            orders[i].los.laundry_owner = laundry_owner
+
+            const laundry_address = await model.address
+                .findOne({
+                    where: {
+                        $and: [
+                            sequelize.where(
+                                sequelize.fn('lower', sequelize.col('address_id')),
+                                sequelize.fn('lower', laundry_owner.address)
+                            )
+                        ]
+                    }
+                })
+            orders[i].los.laundry_owner.address = laundry_address;
+
+
+
+            const customer = await model.users
+                .findOne({
+                    where: {
+                        $and: [
+                            sequelize.where(
+                                sequelize.fn('lower', sequelize.col('user_id')),
+                                sequelize.fn('lower', customer_id)
+                            )
+                        ]
+                    }
+                })
+            orders[i].customer = customer
+
+            const customer_address = await model.address
+                .findOne({
+                    where: {
+                        $and: [
+                            sequelize.where(
+                                sequelize.fn('lower', sequelize.col('address_id')),
+                                sequelize.fn('lower', customer.address)
+                            )
+                        ]
+                    }
+                })
+            orders[i].customer.address = customer_address;
+
+
+
+        } catch (error) {
+            res.status(400).send(error);
+        }
+    }
+
+    var filtered = orders.filter(function (el) {
+		return el != null;
+      });
+      
+      if(filtered && filtered.length > 0){
+        const result = { 'orders': filtered }
+        return res.status(200).send(result);
+      }
+      else{
+       const result = {"msg": "No New Order Exist for this Customer"}
+       return res.status(200).send(result);
+      }
+   
+    
+
+}
 module.exports = router;
