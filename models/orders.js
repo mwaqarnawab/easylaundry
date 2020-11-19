@@ -38,8 +38,16 @@ module.exports = function(sequelize, DataTypes) {
 				type: DataTypes.INTEGER,
 				allowNull: true
 			},
+			laundry_owner_id: {
+				type: DataTypes.INTEGER,
+				allowNull: true
+			},
 			pickup_address: {
 				type: DataTypes.STRING(450),
+				allowNull: true
+			},
+			comment: {
+				type: DataTypes.STRING(499),
 				allowNull: true
 			},
 			total_price: {

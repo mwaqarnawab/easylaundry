@@ -4,6 +4,8 @@ var model = require('../models/index');
 var trans = require('../plugins/transaction');
 var ba64 = require("ba64");
 const fs = require('fs');
+const parallel = require('async-await-parallel')
+
 
 /* Include token authentication methods */
 var auth_file = require('../middleware/authentication')
@@ -429,49 +431,49 @@ async function getOrderDetails(req, res, orders) {
                 })
             orders.customer.address = customer_address;
 
-            const order_comment = await model.order_comments
-            .findAll({
-                where: {
-                    $and: [
-                        sequelize.where(
-                            sequelize.fn('lower', sequelize.col('order')),
-                            sequelize.fn('lower', orders.order_id)
-                        )
-                    ]
-                }
-            })
-        order_comments = order_comment;
+//             const order_comment = await model.order_comments
+//             .findAll({
+//                 where: {
+//                     $and: [
+//                         sequelize.where(
+//                             sequelize.fn('lower', sequelize.col('order')),
+//                             sequelize.fn('lower', orders.order_id)
+//                         )
+//                     ]
+//                 }
+//             })
+//         order_comments = order_comment;
 
 
-            if(order_comments && order_comments.length >= 1){
-        for(var i=0;  i<order_comments.length; i++){
-                const commented_by = await model.users
-        .findOne({
-            where: {
-                $and: [
-                    sequelize.where(
-                        sequelize.fn('lower', sequelize.col('user_id')),
-                        sequelize.fn('lower', order_comments[i].comment_by)
-                    )
-                ]
-            }
-        })
-    order_comments[i].comment_by = commented_by;
+//             if(order_comments && order_comments.length >= 1){
+//         for(var i=0;  i<order_comments.length; i++){
+//                 const commented_by = await model.users
+//         .findOne({
+//             where: {
+//                 $and: [
+//                     sequelize.where(
+//                         sequelize.fn('lower', sequelize.col('user_id')),
+//                         sequelize.fn('lower', order_comments[i].comment_by)
+//                     )
+//                 ]
+//             }
+//         })
+//     order_comments[i].comment_by = commented_by;
 
-    const commented_by_address = await model.address
-    .findOne({
-        where: {
-            $and: [
-                sequelize.where(
-                    sequelize.fn('lower', sequelize.col('address_id')),
-                    sequelize.fn('lower', commented_by.address)
-                )
-            ]
-        }
-    })
-order_comments[i].comment_by.address = commented_by_address;
-        }
-            }
+//     const commented_by_address = await model.address
+//     .findOne({
+//         where: {
+//             $and: [
+//                 sequelize.where(
+//                     sequelize.fn('lower', sequelize.col('address_id')),
+//                     sequelize.fn('lower', commented_by.address)
+//                 )
+//             ]
+//         }
+//     })
+// order_comments[i].comment_by.address = commented_by_address;
+//         }
+//             }
 
         const order_ratings_review = await model.order_ratings_reviews
         .findAll({
@@ -494,7 +496,7 @@ order_comments[i].comment_by.address = commented_by_address;
         }
     
 
-    const result = { 'orders': orders, 'order_comments': order_comments, 'order_ratings_reviews': order_ratings_reviews }
+    const result = { 'orders': orders, /**'order_comments': order_comments,**/ 'order_ratings_reviews': order_ratings_reviews }
     return res.status(200).send(result);
 
 }
@@ -687,13 +689,13 @@ router.post('/updateOrderByOrderIdAndStatus', async function (req, res, next) {
     let order_status = req.body.order.order_status;
     let order_id = req.body.order.order_id;
     let laundry_owner_id = req.body.order.laundry_owner_id
-    let comment = {
-        "comment": req.body.order.comment,
-        "order": order_id,
-        "order_status": order_status,
-        "comment_by": laundry_owner_id
+    // let comment = {
+    //     "comment": req.body.order.comment,
+    //     "order": order_id,
+    //     "order_status": order_status,
+    //     "comment_by": laundry_owner_id
 
-    }
+    // }
  
     
 const order = await model.orders.update(req.body.order, 
@@ -703,9 +705,9 @@ const order = await model.orders.update(req.body.order,
         order_id: order_id
     }
 })
-if(req.body.order.comment != "" && req.body.order.comment != null){
-    const order_comment = await model.order_comments.create(comment)
-}
+// if(req.body.order.comment != "" && req.body.order.comment != null){
+//     const order_comment = await model.order_comments.create(comment)
+// }
 
 result = {"msg": "Order Updated Succesfully"}
 return res.status(400).send(result);
@@ -1127,7 +1129,376 @@ async function resolveOrdersByStatusCustomer(req, res, orders) {
        return res.status(200).send(result);
       }
    
-    
-
 }
+
+
+
+
+router.post('/customerOrderStatistics', async function (req, res, next) {
+    let customer_id = req.body.customer_id;
+
+
+    let request_for_pickup = 0
+    let request_accepted = 0
+    let picked = 0
+    let in_progress = 0
+    let ready_for_delivery = 0
+    let delivered = 0
+    let rejected = 0
+    
+    let b = 0
+await parallel([
+    async () => { 
+      await Promise.resolve(model.orders
+        .count({
+            where: {
+                $and: [
+                    sequelize.where(
+                        sequelize.fn('lower', sequelize.col('customer')),
+                        sequelize.fn('lower', parseInt(customer_id))
+                    ),
+                    sequelize.where(
+                        sequelize.fn('lower', sequelize.col('order_status')),
+                        sequelize.fn('lower', parseInt(1))
+                    )
+                ]
+            }
+        }))
+        .then(data => {
+            request_for_pickup = data
+            
+     })
+    },
+
+    async () => { 
+        await Promise.resolve(model.orders
+          .count({
+              where: {
+                  $and: [
+                      sequelize.where(
+                          sequelize.fn('lower', sequelize.col('customer')),
+                          sequelize.fn('lower', parseInt(customer_id))
+                      ),
+                      sequelize.where(
+                          sequelize.fn('lower', sequelize.col('order_status')),
+                          sequelize.fn('lower', parseInt(2))
+                      )
+                  ]
+              }
+          }))
+          .then(data => {
+            request_accepted = data
+              
+       })
+      },
+
+      
+    async () => { 
+        await Promise.resolve(model.orders
+          .count({
+              where: {
+                  $and: [
+                      sequelize.where(
+                          sequelize.fn('lower', sequelize.col('customer')),
+                          sequelize.fn('lower', parseInt(customer_id))
+                      ),
+                      sequelize.where(
+                          sequelize.fn('lower', sequelize.col('order_status')),
+                          sequelize.fn('lower', parseInt(3))
+                      )
+                  ]
+              }
+          }))
+          .then(data => {
+            picked = data
+              
+       })
+      },
+
+      
+    async () => { 
+        await Promise.resolve(model.orders
+          .count({
+              where: {
+                  $and: [
+                      sequelize.where(
+                          sequelize.fn('lower', sequelize.col('customer')),
+                          sequelize.fn('lower', parseInt(customer_id))
+                      ),
+                      sequelize.where(
+                          sequelize.fn('lower', sequelize.col('order_status')),
+                          sequelize.fn('lower', parseInt(4))
+                      )
+                  ]
+              }
+          }))
+          .then(data => {
+            in_progress = data
+              
+       })
+      },
+
+      
+    async () => { 
+        await Promise.resolve(model.orders
+          .count({
+              where: {
+                  $and: [
+                      sequelize.where(
+                          sequelize.fn('lower', sequelize.col('customer')),
+                          sequelize.fn('lower', parseInt(customer_id))
+                      ),
+                      sequelize.where(
+                          sequelize.fn('lower', sequelize.col('order_status')),
+                          sequelize.fn('lower', parseInt(5))
+                      )
+                  ]
+              }
+          }))
+          .then(data => {
+            ready_for_delivery = data
+              
+       })
+      },
+
+      
+    async () => { 
+        await Promise.resolve(model.orders
+          .count({
+              where: {
+                  $and: [
+                      sequelize.where(
+                          sequelize.fn('lower', sequelize.col('customer')),
+                          sequelize.fn('lower', parseInt(customer_id))
+                      ),
+                      sequelize.where(
+                          sequelize.fn('lower', sequelize.col('order_status')),
+                          sequelize.fn('lower', parseInt(6))
+                      )
+                  ]
+              }
+          }))
+          .then(data => {
+            delivered = data
+              
+       })
+      },
+
+      
+    async () => { 
+        await Promise.resolve(model.orders
+          .count({
+              where: {
+                  $and: [
+                      sequelize.where(
+                          sequelize.fn('lower', sequelize.col('customer')),
+                          sequelize.fn('lower', parseInt(customer_id))
+                      ),
+                      sequelize.where(
+                          sequelize.fn('lower', sequelize.col('order_status')),
+                          sequelize.fn('lower', parseInt(7))
+                      )
+                  ]
+              }
+          }))
+          .then(data => {
+            rejected = data
+              
+       })
+      },
+
+  ], 7)
+  const result = { "request_for_pickup": request_for_pickup , "request_accepted": request_accepted, 
+  "picked": picked, "in_progress":in_progress, "ready_for_delivery":ready_for_delivery,
+"delivered": delivered, "rejected":rejected}
+  return res.status(200).send(result);
+
+
+});
+
+
+
+
+router.post('/laundryOrderStatistics', async function (req, res, next) {
+    let laundry_owner_id = req.body.laundry_owner_id;
+
+
+    let request_for_pickup = 0
+    let request_accepted = 0
+    let picked = 0
+    let in_progress = 0
+    let ready_for_delivery = 0
+    let delivered = 0
+    let rejected = 0
+    
+    let b = 0
+await parallel([
+    async () => { 
+      await Promise.resolve(model.orders
+        .count({
+            where: {
+                $and: [
+                    sequelize.where(
+                        sequelize.fn('lower', sequelize.col('laundry_owner_id')),
+                        sequelize.fn('lower', parseInt(laundry_owner_id))
+                    ),
+                    sequelize.where(
+                        sequelize.fn('lower', sequelize.col('order_status')),
+                        sequelize.fn('lower', parseInt(1))
+                    )
+                ]
+            }
+        }))
+        .then(data => {
+            request_for_pickup = data
+            
+     })
+    },
+
+    async () => { 
+        await Promise.resolve(model.orders
+          .count({
+              where: {
+                  $and: [
+                      sequelize.where(
+                          sequelize.fn('lower', sequelize.col('laundry_owner_id')),
+                          sequelize.fn('lower', parseInt(laundry_owner_id))
+                      ),
+                      sequelize.where(
+                          sequelize.fn('lower', sequelize.col('order_status')),
+                          sequelize.fn('lower', parseInt(2))
+                      )
+                  ]
+              }
+          }))
+          .then(data => {
+            request_accepted = data
+              
+       })
+      },
+
+      
+    async () => { 
+        await Promise.resolve(model.orders
+          .count({
+              where: {
+                  $and: [
+                      sequelize.where(
+                          sequelize.fn('lower', sequelize.col('laundry_owner_id')),
+                          sequelize.fn('lower', parseInt(laundry_owner_id))
+                      ),
+                      sequelize.where(
+                          sequelize.fn('lower', sequelize.col('order_status')),
+                          sequelize.fn('lower', parseInt(3))
+                      )
+                  ]
+              }
+          }))
+          .then(data => {
+            picked = data
+              
+       })
+      },
+
+      
+    async () => { 
+        await Promise.resolve(model.orders
+          .count({
+              where: {
+                  $and: [
+                      sequelize.where(
+                          sequelize.fn('lower', sequelize.col('laundry_owner_id')),
+                          sequelize.fn('lower', parseInt(laundry_owner_id))
+                      ),
+                      sequelize.where(
+                          sequelize.fn('lower', sequelize.col('order_status')),
+                          sequelize.fn('lower', parseInt(4))
+                      )
+                  ]
+              }
+          }))
+          .then(data => {
+            in_progress = data
+              
+       })
+      },
+
+      
+    async () => { 
+        await Promise.resolve(model.orders
+          .count({
+              where: {
+                  $and: [
+                      sequelize.where(
+                          sequelize.fn('lower', sequelize.col('laundry_owner_id')),
+                          sequelize.fn('lower', parseInt(laundry_owner_id))
+                      ),
+                      sequelize.where(
+                          sequelize.fn('lower', sequelize.col('order_status')),
+                          sequelize.fn('lower', parseInt(5))
+                      )
+                  ]
+              }
+          }))
+          .then(data => {
+            ready_for_delivery = data
+              
+       })
+      },
+
+      
+    async () => { 
+        await Promise.resolve(model.orders
+          .count({
+              where: {
+                  $and: [
+                      sequelize.where(
+                          sequelize.fn('lower', sequelize.col('laundry_owner_id')),
+                          sequelize.fn('lower', parseInt(laundry_owner_id))
+                      ),
+                      sequelize.where(
+                          sequelize.fn('lower', sequelize.col('order_status')),
+                          sequelize.fn('lower', parseInt(6))
+                      )
+                  ]
+              }
+          }))
+          .then(data => {
+            delivered = data
+              
+       })
+      },
+
+      
+    async () => { 
+        await Promise.resolve(model.orders
+          .count({
+              where: {
+                  $and: [
+                      sequelize.where(
+                          sequelize.fn('lower', sequelize.col('laundry_owner_id')),
+                          sequelize.fn('lower', parseInt(laundry_owner_id))
+                      ),
+                      sequelize.where(
+                          sequelize.fn('lower', sequelize.col('order_status')),
+                          sequelize.fn('lower', parseInt(7))
+                      )
+                  ]
+              }
+          }))
+          .then(data => {
+            rejected = data
+              
+       })
+      },
+
+  ], 7)
+  const result = { "request_for_pickup": request_for_pickup , "request_accepted": request_accepted, 
+  "picked": picked, "in_progress":in_progress, "ready_for_delivery":ready_for_delivery,
+"delivered": delivered, "rejected":rejected}
+  return res.status(200).send(result);
+
+
+});
+
 module.exports = router;
