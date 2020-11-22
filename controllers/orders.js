@@ -243,7 +243,7 @@ router.post('/viewRatingsReviewsByLaundryOwner', async function (req, res, next)
 
     // CHECK IF THERE IS USER WITH THIS EMAIL
 
-    // laundry_ser = []
+    laundry_ser = []
     await Promise.resolve(model.order_ratings_reviews
         .findAll({
             where: {
@@ -261,8 +261,10 @@ router.post('/viewRatingsReviewsByLaundryOwner', async function (req, res, next)
                 return res.status(400).send(result);
             }
             else {
-                result = {"rating_reviews": data}
-                return res.status(200).send(result);
+                laundry_ser = data
+                resolveLaundryRating(req, res, laundry_ser)
+                // result = {"rating_reviews": data}
+                // return res.status(200).send(result);
                 
             }
           
@@ -271,6 +273,76 @@ router.post('/viewRatingsReviewsByLaundryOwner', async function (req, res, next)
 
 
 });
+
+
+async function resolveLaundryRating(req, res, ratings_reviews) {
+
+
+    for (let i = 0; i < ratings_reviews.length; i++) {
+
+        order_id = ratings_reviews[i].order
+        
+
+
+        try {
+
+            const order = await model.orders
+                .findOne({
+                    where: {
+                        $and: [
+                            sequelize.where(
+                                sequelize.fn('lower', sequelize.col('order_id')),
+                                sequelize.fn('lower', order_id)
+                            )
+                        ]
+                    }
+                });
+        
+
+            const customer = await model.users
+                .findOne({
+                    where: {
+                        $and: [
+                            sequelize.where(
+                                sequelize.fn('lower', sequelize.col('user_id')),
+                                sequelize.fn('lower', order.customer)
+                            )
+                        ]
+                    }
+                });
+
+                const customer_address = await model.address
+                .findOne({
+                    where: {
+                        $and: [
+                            sequelize.where(
+                                sequelize.fn('lower', sequelize.col('address_id')),
+                                sequelize.fn('lower', customer.address)
+                            )
+                        ]
+                    }
+                });
+           
+           customer.address = customer_address
+           ratings_reviews[i].customer = customer
+           
+
+
+        } catch (error) {
+            res.status(400).send(error);
+        }
+        
+    }
+   
+    result = {"rating_reviews": ratings_reviews}
+    return res.status(200).send(result);
+    
+   
+}
+const waitFor = (ms) => new Promise(r => setTimeout(r, ms));
+
+
+
 
 
 router.post('/viewOrderDetailByOrderId', async function (req, res, next) {

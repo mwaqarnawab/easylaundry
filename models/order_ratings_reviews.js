@@ -30,6 +30,10 @@ module.exports = function(sequelize, DataTypes) {
 				type: DataTypes.INTEGER,
 				allowNull: true
 			},
+			customer: {
+				type: DataTypes.INTEGER,
+				allowNull: true
+			},
 			reviews: {
 				type: DataTypes.STRING(450),
 				allowNull: true

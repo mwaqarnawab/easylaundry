@@ -7,6 +7,7 @@ var mysql = require('mysql2');
 
 // CONTROLLERS
 var usersCtrl = require('./controllers/users');
+var adminCtrl = require('./controllers/admins');
 var ordersCtrl = require('./controllers/orders');
 var servicesCtrl = require('./controllers/services')
 var financialDetailsCtrl = require('./controllers/financial_details')
@@ -83,6 +84,7 @@ app.get('/', function(req, res) {
 });
 app.use('/users', usersCtrl);
 app.use('/services', servicesCtrl);
+app.use('/admin', adminCtrl)
 app.use('/financialDetails', financialDetailsCtrl);
 app.use('/orders', ordersCtrl);
 

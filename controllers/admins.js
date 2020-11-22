@@ -14,41 +14,172 @@ trans.setModel(model);
 var sequelize = require('sequelize');
 const { request } = require('express');
 
-router.get('/', function (req, res, next) {
-	var vm = req.query;
-	let and = [];
-	if (vm.user_id)
-		and.push(sequelize.where(sequelize.col('user_id'), parseInt(vm.user_id)));
-	if (vm.profile_id)
-		and.push(
-			sequelize.where(sequelize.col('profile_id'), parseInt(vm.profile_id))
-		);
-	if (vm.name)
-		and.push(
-			sequelize.where(sequelize.fn('lower', sequelize.col('name')), {
-				[sequelize.Op.like]: `%${vm.name.toLowerCase()}%`
-			})
-		);
-	if (vm.is_active != null)
-		and.push(
-			sequelize.where(
-				sequelize.col('is_active'),
-				vm.is_active == 'true' ? 1 : 0
-			)
-		);
-	console.log('get => vm', vm);
-	model.users
-		.findAll({
-			attributes: ['user_id', 'profile_id', 'name', 'is_active'],
+router.post('/registerLaundry', function (req, res, next) {
+	req.body.user.role = parseInt(req.body.user.role)
+	let user_detail = req.body.user;
+	let address_detail = req.body.address;
+	// console.log(address_detail.cnic_front)
+	cnic_front_image = ""
+	cnic_back_image = ""
+	// pntn_certificate = ""
+
+	cnic_front_image_extension = ""
+	cnic_back_image_extension = ""
+	// pntn_certificate_extension = ""
+
+	if(address_detail.cnic_front && address_detail.cnic_front != "" && address_detail.cnic_front != null){
+		cnic_front_image = address_detail.cnic_front
+		image_extension = cnic_front_image.substring("data:image/".length, cnic_front_image.indexOf(";base64"))
+		address_detail.cnic_front_image_extension = image_extension
+		address_detail.cnic_front = ""
+	}
+
+	if(address_detail.cnic_back && address_detail.cnic_back != "" && address_detail.cnic_back != null){
+		cnic_back_image = address_detail.cnic_back
+		image_extension = cnic_back_image.substring("data:image/".length, cnic_back_image.indexOf(";base64"))
+		address_detail.cnic_back_image_extension = image_extension
+		address_detail.cnic_back = ""
+	}
+
+	// if(address_detail.pntn_certificate && address_detail.pntn_certificate != "" && address_detail.pntn_certificate != null){
+	// 	pntn_certificate = address_detail.pntn_certificate
+	// 	image_extension = pntn_certificate.substring("data:image/".length, pntn_certificate.indexOf(";base64"))
+	// 	address_detail.pntn_certificate_extension = image_extension
+	// 	address_detail.pntn_certificate = ""
+	// }
+	
+
+	
+
+	// let buff = new Buffer.from(data, 'base64');
+	// fs.writeFileSync('stack-abuse-logo-out.png', buff);
+
+	// let buff = fs.readFileSync('images/stack-abuse-logo-out');
+	// let base64data = buff.toString('base64');
+	// res.status(200).send(base64data);
+	// return
+
+		
+			
+	// CHECK IF THE PROFILE EXISTS
+	model.roles
+		.findOne({
 			where: {
-				$and: and
-			},
-			order: [['name', 'ASC']]
+				role_id: user_detail.role
+			}
 		})
-		.then(result => {
-			res.send(200, result);
+		.then(data => {
+			if (!data) {
+				res.send(400, 'Role not found');
+				return;
+			}
+
+			// CHECK IF THERE IS ANOTHER USER WITH THE SAME NAME
+			model.users
+				.findOne({
+					where: {
+						$or: [
+							sequelize.where(
+								sequelize.fn('lower', sequelize.col('email')),
+								sequelize.fn('lower', user_detail.email)
+							),
+							// sequelize.where(
+							// 	sequelize.fn('lower', sequelize.col('mobile_no')),
+							// 	sequelize.fn('lower', user_detail.mobile_no)
+							// )
+						]
+					}
+				})
+				.then(userdata => {
+					if (userdata) {
+						res.status(400).send('There is another user with this Email');
+						return;
+					}
+
+					trans.execTrans(res, t => {
+						 return Promise.resolve(model.address
+							.create(address_detail, {
+								transaction: t
+
+							}))
+							.then(address => {
+
+								user_detail.address = address.address_id
+								 Promise.resolve(model.users
+									.create(user_detail, {
+										transaction: t
+									}))
+									.then(user => {
+										
+										
+										//Write cnic front image
+										if(cnic_front_image != ""){
+											data_url = cnic_front_image;
+											ba64.writeImageSync("images/user"+user.user_id+"front", data_url);
+										}
+
+										//Write cnic back image
+										if(cnic_back_image != ""){
+											data_url = cnic_back_image;
+											ba64.writeImageSync("images/user"+user.user_id+"back", data_url);
+										}
+										
+										// //Write pntn certificate image
+										// if(pntn_certificate != ""){
+										// 	data_url = pntn_certificate;
+										// 	ba64.writeImageSync("images/user"+user.user_id+"pntn", data_url);
+										// }
+										
+									
+
+
+										// let buff = new Buffer.from(cnic_front_image, 'base64');
+										// fs.writeFileSync('images/user'+user.user_id+'front.'+image_extension, buff);
+
+										t.commit();
+										res.status(200).send(user)
+										return
+
+									});
+							})
+
+					});
+				});
 		});
 });
+
+
+
+router.post('/activateDeactivateUser',async function (req, res, next) {
+
+    let user_id = req.body.user_id;
+    let user_status = req.body.user_status;
+
+
+
+	const tax = await model.users.update({"status": user_status}, 
+			
+		{
+		where: {
+			user_id: user_id
+		}
+    })
+    if(user_status == '1'){
+        msg = "User has been activated"
+    }
+    if(user_status == '0'){
+        msg = "User has been de-activated"
+    }
+    if(user_status == '2'){
+        msg = "User has been Blacklisted"
+    }
+
+		result = {"msg": msg}
+		res.status(200).send(result)
+		return
+				
+});
+
 
 
 router.post('/getUserById', function (req, res, next) {
@@ -95,6 +226,7 @@ router.post('/getUserById', function (req, res, next) {
 			}
 		});
 });
+const waitFor = (ms) => new Promise(r => setTimeout(r, ms));
 
 
 router.post('/getAllLaundryOwners', async function (req, res, next) {
@@ -142,13 +274,154 @@ router.post('/getAllLaundryOwners', async function (req, res, next) {
 					
 				]
 			}
-		})
+        })
+        if(address.cnic_front_image_extension && address.cnic_front_image_extension.indexOf(".") !== -1){
+            cnic_front_filename_ext = address.cnic_front_image_extension.slice(address.cnic_front_image_extension.lastIndexOf('.') + 1);
+            let imageUrl = "images/user"+laundryOwners[i].user_id+"front."+ cnic_front_filename_ext
+            let buff = await fs.readFileSync(imageUrl);
+            let cnic_front = buff.toString('base64');
+            address.cnic_front = cnic_front
+            
+        }
+        else if(address.cnic_front_image_extension && address.cnic_front_image_extension.indexOf(".") == -1){
+            cnic_front_filename_ext = address.cnic_front_image_extension;
+            let imageUrl = "images/user"+laundryOwners[i].user_id+"front."+ cnic_front_filename_ext
+            let buff = await fs.readFileSync(imageUrl);
+            let cnic_front = buff.toString('base64');
+            address.cnic_front = cnic_front
+        }
+        
+
+    else{
+
+    }
+    // await waitFor(500)
+        if(address.cnic_back_image_extension && address.cnic_back_image_extension.indexOf(".") !== -1){
+            cnic_back_filename_ext = address.cnic_back_image_extension.slice(address.cnic_back_image_extension.lastIndexOf('.') + 1);
+            let imageUrl = "images/user"+laundryOwners[i].user_id+"back."+ cnic_back_filename_ext
+            let buff = await fs.readFileSync(imageUrl);
+            let cnic_back = buff.toString('base64');
+            address.cnic_back = cnic_back
+            
+        }
+        else if(address.cnic_back_image_extension && address.cnic_back_image_extension.indexOf(".") == -1){
+            cnic_back_filename_ext = address.cnic_back_image_extension;
+            let imageUrl = "images/user"+laundryOwners[i].user_id+"back."+ cnic_back_filename_ext
+            let buff = await fs.readFileSync(imageUrl);
+            let cnic_back = buff.toString('base64');
+            address.cnic_back = cnic_back
+        }
+        else{}
 		
 			laundryOwners[i].address = address
 			laundryOwners[i].password = ""
 			
 			
-		}
+        }
+        
+		result = { 'laundryOwners': laundryOwners }
+		return res.status(200).send(result);
+		
+			
+		})
+		
+    
+        
+
+router.post('/getAllLaundryOwnersByStatus', async function (req, res, next) {
+	let user_status = req.body.user_status;
+	laundryOwners = []
+
+	// CHECK IF THERE IS ANOTHER USER WITH THE SAME NAME
+	await Promise.resolve(model.users
+		.findAll(
+			{
+				where: {
+					$and: [
+						sequelize.where(
+							sequelize.fn('lower', sequelize.col('role')),
+							sequelize.fn('lower', 2)
+                        ),
+                        sequelize.where(
+							sequelize.fn('lower', sequelize.col('status')),
+							sequelize.fn('lower', parseInt(user_status))
+						),
+						
+					]
+				}
+			}
+		))
+		.then(data => {
+			if (data) {
+				laundryOwners = data
+			}
+		
+			else {
+				res.status(400).send('No Laundry Owner Exist With this Status');
+				return;
+			}
+
+		})
+
+
+		for (let i = 0; i < laundryOwners.length; i++) {
+
+			const address = await model.address
+		.findOne({
+			where: {
+				$or: [
+					sequelize.where(
+						sequelize.fn('lower', sequelize.col('address_id')),
+						sequelize.fn('lower', laundryOwners[i].address)
+					),
+					
+				]
+			}
+        })
+        if(address.cnic_front_image_extension && address.cnic_front_image_extension.indexOf(".") !== -1){
+            cnic_front_filename_ext = address.cnic_front_image_extension.slice(address.cnic_front_image_extension.lastIndexOf('.') + 1);
+            let imageUrl = "images/user"+laundryOwners[i].user_id+"front."+ cnic_front_filename_ext
+            let buff = await fs.readFileSync(imageUrl);
+            let cnic_front = buff.toString('base64');
+            address.cnic_front = cnic_front
+            
+        }
+        else if(address.cnic_front_image_extension && address.cnic_front_image_extension.indexOf(".") == -1){
+            cnic_front_filename_ext = address.cnic_front_image_extension;
+            let imageUrl = "images/user"+laundryOwners[i].user_id+"front."+ cnic_front_filename_ext
+            let buff = await fs.readFileSync(imageUrl);
+            let cnic_front = buff.toString('base64');
+            address.cnic_front = cnic_front
+        }
+        
+
+    else{
+
+    }
+    // await waitFor(500)
+        if(address.cnic_back_image_extension && address.cnic_back_image_extension.indexOf(".") !== -1){
+            cnic_back_filename_ext = address.cnic_back_image_extension.slice(address.cnic_back_image_extension.lastIndexOf('.') + 1);
+            let imageUrl = "images/user"+laundryOwners[i].user_id+"back."+ cnic_back_filename_ext
+            let buff = await fs.readFileSync(imageUrl);
+            let cnic_back = buff.toString('base64');
+            address.cnic_back = cnic_back
+            
+        }
+        else if(address.cnic_back_image_extension && address.cnic_back_image_extension.indexOf(".") == -1){
+            cnic_back_filename_ext = address.cnic_back_image_extension;
+            let imageUrl = "images/user"+laundryOwners[i].user_id+"back."+ cnic_back_filename_ext
+            let buff = await fs.readFileSync(imageUrl);
+            let cnic_back = buff.toString('base64');
+            address.cnic_back = cnic_back
+        }
+        else{}
+		
+			laundryOwners[i].address = address
+			laundryOwners[i].password = ""
+			
+			
+        }
+        
 		result = { 'laundryOwners': laundryOwners }
 		return res.status(200).send(result);
 		
@@ -260,142 +533,6 @@ router.post('/checkIfUserExist', function (req, res, next) {
 				res.status(200).send('No User Found with this Email');
 				return;
 			}
-		});
-});
-
-router.post('/register', function (req, res, next) {
-	req.body.user.role = parseInt(req.body.user.role)
-	let user_detail = req.body.user;
-	let address_detail = req.body.address;
-	// console.log(address_detail.cnic_front)
-	cnic_front_filename = address_detail.cnic_front_filename
-	cnic_back_filename = address_detail.cnic_back_file_name
-	cnic_front_filename_ext=""
-	cnic_front_filename_ext = ""
-	cnic_front_image = ""
-	cnic_back_image = ""
-	// pntn_certificate = ""
-
-	
-	// pntn_certificate_extension = ""
-
-	if(address_detail.cnic_front && address_detail.cnic_front != "" && address_detail.cnic_front != null){
-		cnic_front_filename_ext = cnic_front_filename.slice(cnic_front_filename.lastIndexOf('.') + 1);
-		cnic_front_image = "data:image/"+cnic_front_filename_ext+ ";base64," + address_detail.cnic_front
-		address_detail.cnic_front_image_extension = cnic_front_filename
-		address_detail.cnic_front = ""
-	}
-
-	if(address_detail.cnic_back && address_detail.cnic_back != "" && address_detail.cnic_back != null){
-		cnic_back_filename_ext = cnic_back_filename.slice(cnic_back_filename.lastIndexOf('.') + 1);
-		cnic_back_image = "data:image/"+cnic_back_filename_ext+ ";base64," + address_detail.cnic_back
-		address_detail.cnic_back_image_extension = cnic_back_filename
-		address_detail.cnic_back = ""
-	}
-	// if(address_detail.pntn_certificate && address_detail.pntn_certificate != "" && address_detail.pntn_certificate != null){
-	// 	pntn_certificate = address_detail.pntn_certificate
-	// 	image_extension = pntn_certificate.substring("data:image/".length, pntn_certificate.indexOf(";base64"))
-	// 	address_detail.pntn_certificate_extension = image_extension
-	// 	address_detail.pntn_certificate = ""
-	// }
-	
-
-	
-
-	// let buff = new Buffer.from(data, 'base64');
-	// fs.writeFileSync('stack-abuse-logo-out.png', buff);
-
-	// let buff = fs.readFileSync('images/stack-abuse-logo-out');
-	// let base64data = buff.toString('base64');
-	// res.status(200).send(base64data);
-	// return
-
-		
-			
-	// CHECK IF THE PROFILE EXISTS
-	model.roles
-		.findOne({
-			where: {
-				role_id: user_detail.role
-			}
-		})
-		.then(data => {
-			if (!data) {
-				res.send(400, 'Role not found');
-				return;
-			}
-
-			// CHECK IF THERE IS ANOTHER USER WITH THE SAME NAME
-			model.users
-				.findOne({
-					where: {
-						$or: [
-							sequelize.where(
-								sequelize.fn('lower', sequelize.col('email')),
-								sequelize.fn('lower', user_detail.email)
-							),
-							// sequelize.where(
-							// 	sequelize.fn('lower', sequelize.col('mobile_no')),
-							// 	sequelize.fn('lower', user_detail.mobile_no)
-							// )
-						]
-					}
-				})
-				.then(userdata => {
-					if (userdata) {
-						res.status(400).send('There is another user with this Email');
-						return;
-					}
-
-					trans.execTrans(res, t => {
-						 return Promise.resolve(model.address
-							.create(address_detail, {
-								transaction: t
-
-							}))
-							.then(address => {
-
-								user_detail.address = address.address_id
-								 Promise.resolve(model.users
-									.create(user_detail, {
-										transaction: t
-									}))
-									.then(user => {
-										
-										
-										// //Write cnic front image
-										if(cnic_front_image != ""){
-											data_url = cnic_front_image;
-											ba64.writeImageSync("images/user"+user.user_id+"front", data_url);
-										}
-
-										// //Write cnic back image
-										if(cnic_back_image != ""){
-											data_url = cnic_back_image;
-											ba64.writeImageSync("images/user"+user.user_id+"back", data_url);
-										}
-										
-										// //Write pntn certificate image
-										// if(pntn_certificate != ""){
-										// 	data_url = pntn_certificate;
-										// 	ba64.writeImageSync("images/user"+user.user_id+"pntn", data_url);
-										// }
-										
-									
-
-
-										// let buff = new Buffer.from(cnic_front_image, 'base64');
-										// fs.writeFileSync('images/user'+user.user_id+'front.'+image_extension, buff);
-
-										t.commit();
-										res.status(200).send(user)
-										return
-
-									});
-							})
-
-					});
-				});
 		});
 });
 
