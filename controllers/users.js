@@ -106,10 +106,14 @@ router.post('/getAllLaundryOwners', async function (req, res, next) {
 		.findAll(
 			{
 				where: {
-					$or: [
+					$and: [
 						sequelize.where(
 							sequelize.fn('lower', sequelize.col('role')),
 							sequelize.fn('lower', 2)
+						),
+						sequelize.where(
+							sequelize.fn('lower', sequelize.col('status')),
+							sequelize.fn('lower', 1)
 						),
 						
 					]
@@ -168,10 +172,14 @@ router.post('/getAllLaundryOwners', async function (req, res, next) {
 				.findAll(
 					{
 						where: {
-							$or: [
+							$and: [
 								sequelize.where(
 									sequelize.fn('lower', sequelize.col('role')),
 									sequelize.fn('lower', 2)
+								),
+								sequelize.where(
+									sequelize.fn('lower', sequelize.col('status')),
+									sequelize.fn('lower', 1)
 								),
 								
 							]
@@ -719,6 +727,14 @@ router.post('/login', function (req, res, next) {
 		})
 		.then(data => {
 			if (data) {
+				if(data.status == 0 || data.status == '0'){
+					response = {"msg": "Your Account is not Active"}
+					res.status(400).send(response)
+				}
+				if(data.status == 2 || data.status == '2'){
+					response = {"msg": "Your Account is Blacklisted"}
+					res.status(400).send(response)
+				}
 				
 				Promise.resolve(model.address
 		.findOne({
