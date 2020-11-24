@@ -50,7 +50,7 @@ module.exports = function(sequelize, DataTypes) {
 				type: DataTypes.STRING(100),
 				allowNull: true
 			},
-			status: {
+			is_active: {
 				type: DataTypes.INTEGER,
 				allowNull: true
 			}

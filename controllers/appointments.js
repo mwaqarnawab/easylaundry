@@ -15,20 +15,18 @@ var verifyToken = auth_file.verifyToken
 trans.setModel(model);
 var sequelize = require('sequelize');
 const { request } = require('express');
-const order_comments = require('../models/order_comments');
-const order_ratings_reviews = require('../models/order_ratings_reviews');
 
 
 
 
 
-router.post('/getAllCustomerOrders', async function (req, res, next) {
+router.post('/getAllCustomerAppointments', async function (req, res, next) {
     let customer_id = req.body.customer_id;
 
     // CHECK IF THERE IS USER WITH THIS EMAIL
-    orders = []
+    appointments = []
     // laundry_ser = []
-    await Promise.resolve(model.orders
+    await Promise.resolve(model.appointments
         .findAll({
             where: {
                 $and: [
@@ -41,12 +39,12 @@ router.post('/getAllCustomerOrders', async function (req, res, next) {
         }))
         .then(data => {
             if (!data || data.length <= 0) {
-                result = {"msg": "No Order Exist for this Customer"}
+                result = {"msg": "No appointment Exist for this Customer"}
                 return res.status(400).send(result);
             }
             else {
-                orders = data
-                resolveCustomerOrders(req, res, orders)
+                appointments = data
+                resolveCustomerAppointments(req, res, appointments)
                 // console.log(laundry_owner_service)
             }
             // laundry_ser = laundry_owner_service
@@ -58,30 +56,30 @@ router.post('/getAllCustomerOrders', async function (req, res, next) {
 
 
 
-async function resolveCustomerOrders(req, res, orders) {
+async function resolveCustomerAppointments(req, res, appointments) {
 
 
-    for (let i = 0; i < orders.length; i++) {
+    for (let i = 0; i < appointments.length; i++) {
 
-        customer_id = orders[i].customer
-        laundry_owner_service_id = orders[i].los
-        order_status_id = orders[i].order_status
+        customer_id = appointments[i].customer
+        laundry_owner_service_id = appointments[i].los
+        appointment_status_id = appointments[i].appointment_status
 
 
 
         try {
-            const order_status = await model.order_status
+            const appointment_status = await model.appointment_status
                 .findOne({
                     where: {
                         $and: [
                             sequelize.where(
-                                sequelize.fn('lower', sequelize.col('order_status_id')),
-                                sequelize.fn('lower', order_status_id)
+                                sequelize.fn('lower', sequelize.col('appointment_status_id')),
+                                sequelize.fn('lower', appointment_status_id)
                             )
                         ]
                     }
                 });
-            orders[i].order_status = order_status
+                appointments[i].appointment_status = appointment_status
 
             const laundry_owner_service = await model.laundry_owner_services
                 .findOne({
@@ -94,7 +92,7 @@ async function resolveCustomerOrders(req, res, orders) {
                         ]
                     }
                 });
-            orders[i].los = laundry_owner_service
+                appointments[i].los = laundry_owner_service
 
             const service = await model.services
                 .findOne({
@@ -107,7 +105,7 @@ async function resolveCustomerOrders(req, res, orders) {
                         ]
                     }
                 })
-            orders[i].los.service = service
+                appointments[i].los.service = service
 
             const category = await model.service_categories
                 .findOne({
@@ -120,7 +118,7 @@ async function resolveCustomerOrders(req, res, orders) {
                         ]
                     }
                 })
-            orders[i].los.service.service_category = category;
+                appointments[i].los.service.service_category = category;
 
 
 
@@ -136,7 +134,7 @@ async function resolveCustomerOrders(req, res, orders) {
                         ]
                     }
                 })
-            orders[i].los.laundry_owner = laundry_owner
+                appointments[i].los.laundry_owner = laundry_owner
 
             const laundry_address = await model.address
                 .findOne({
@@ -149,7 +147,7 @@ async function resolveCustomerOrders(req, res, orders) {
                         ]
                     }
                 })
-            orders[i].los.laundry_owner.address = laundry_address;
+                appointments[i].los.laundry_owner.address = laundry_address;
 
 
 
@@ -164,7 +162,7 @@ async function resolveCustomerOrders(req, res, orders) {
                         ]
                     }
                 })
-            orders[i].customer = customer
+                appointments[i].customer = customer
 
             const customer_address = await model.address
                 .findOne({
@@ -177,7 +175,7 @@ async function resolveCustomerOrders(req, res, orders) {
                         ]
                     }
                 })
-            orders[i].customer.address = customer_address;
+                appointments[i].customer.address = customer_address;
 
 
 
@@ -186,26 +184,26 @@ async function resolveCustomerOrders(req, res, orders) {
         }
     }
 
-    const result = { 'orders': orders }
+    const result = { 'appointments': appointments }
     return res.status(200).send(result);
 
 }
 
 
-router.post('/placeOrder', function (req, res, next) {
-    order_detail = req.body.order
-    order_detail.order_status = 1
+router.post('/placeAppointment', function (req, res, next) {
+    appointment_detail = req.body.appointment
+    appointment_detail.appointment_status = 1
 
     trans.execTrans(res, t => {
-        return Promise.resolve(model.orders
-            .create(order_detail, {
+        return Promise.resolve(model.appointments
+            .create(appointment_detail, {
                 transaction: t
 
             }))
-            .then(order => {
+            .then(appointments => {
 
                 t.commit();
-                result = { "msg": "Order have been placed, Please Wait for Laundry to Accept Your Order", "order": order }
+                result = { "msg": "Appointment have been placed, Please Wait for Laundry to Accept Your Appointment", "appointment": appointments }
                 res.status(200).send(result)
                 return
             });
@@ -219,7 +217,7 @@ router.post('/addRatingAndReviews', function (req, res, next) {
     rating_review = req.body.rating_review
 
     trans.execTrans(res, t => {
-        return Promise.resolve(model.order_ratings_reviews
+        return Promise.resolve(model.appointment_ratings_reviews
             .create(rating_review, {
                 transaction: t
 
@@ -244,7 +242,7 @@ router.post('/viewRatingsReviewsByLaundryOwner', async function (req, res, next)
     // CHECK IF THERE IS USER WITH THIS EMAIL
 
     laundry_ser = []
-    await Promise.resolve(model.order_ratings_reviews
+    await Promise.resolve(model.appointment_ratings_reviews
         .findAll({
             where: {
                 $and: [
@@ -280,19 +278,19 @@ async function resolveLaundryRating(req, res, ratings_reviews) {
 
     for (let i = 0; i < ratings_reviews.length; i++) {
 
-        order_id = ratings_reviews[i].order
+        appointment_id = ratings_reviews[i].appointment
         
 
 
         try {
 
-            const order = await model.orders
+            const appointment = await model.appointments
                 .findOne({
                     where: {
                         $and: [
                             sequelize.where(
-                                sequelize.fn('lower', sequelize.col('order_id')),
-                                sequelize.fn('lower', order_id)
+                                sequelize.fn('lower', sequelize.col('appointment_id')),
+                                sequelize.fn('lower', appointment_id)
                             )
                         ]
                     }
@@ -305,7 +303,7 @@ async function resolveLaundryRating(req, res, ratings_reviews) {
                         $and: [
                             sequelize.where(
                                 sequelize.fn('lower', sequelize.col('user_id')),
-                                sequelize.fn('lower', order.customer)
+                                sequelize.fn('lower', appointment.customer)
                             )
                         ]
                     }
@@ -345,31 +343,31 @@ const waitFor = (ms) => new Promise(r => setTimeout(r, ms));
 
 
 
-router.post('/viewOrderDetailByOrderId', async function (req, res, next) {
-    let order_id = req.body.order_id;
+router.post('/viewAppointmentDetailByAppointmentId', async function (req, res, next) {
+    let appointment_id = req.body.appointment_id;
 
     // CHECK IF THERE IS USER WITH THIS EMAIL
-    order_detail = null
+    appointment_detail = null
     // laundry_ser = []
-    await Promise.resolve(model.orders
+    await Promise.resolve(model.appointments
         .findOne({
             where: {
                 $and: [
                     sequelize.where(
-                        sequelize.fn('lower', sequelize.col('order_id')),
-                        sequelize.fn('lower', parseInt(order_id))
+                        sequelize.fn('lower', sequelize.col('appointment_id')),
+                        sequelize.fn('lower', parseInt(appointment_id))
                     )
                 ]
             }
         }))
         .then(data => {
             if (!data) {
-                result = {"msg": "No Order Exist"}
+                result = {"msg": "No Appointment Exist"}
                 return res.status(400).send(result);
             }
             else {
-                order_detail = data
-                getOrderDetails(req, res, order_detail)
+                appointment_detail = data
+                getAppointmentDetails(req, res, appointment_detail)
                 // console.log(laundry_owner_service)
             }
             // laundry_ser = laundry_owner_service
@@ -382,30 +380,30 @@ router.post('/viewOrderDetailByOrderId', async function (req, res, next) {
 
 
 
-async function getOrderDetails(req, res, orders) {
+async function getAppointmentDetails(req, res, appointments) {
 
     
 
-        customer_id = orders.customer
-        laundry_owner_service_id = orders.los
-        order_status_id = orders.order_status
-        var order_comments = []
-        var order_ratings_reviews = []
+        customer_id = appointments.customer
+        laundry_owner_service_id = appointments.los
+        appointment_status_id = appointments.appointment_status
+        var appointment_comments = []
+        var appointment_ratings_reviews = []
 
 
         try {
-            const order_status = await model.order_status
+            const appointment_status = await model.appointment_status
                 .findOne({
                     where: {
                         $and: [
                             sequelize.where(
-                                sequelize.fn('lower', sequelize.col('order_status_id')),
-                                sequelize.fn('lower', order_status_id)
+                                sequelize.fn('lower', sequelize.col('appointment_status_id')),
+                                sequelize.fn('lower', appointment_status_id)
                             )
                         ]
                     }
                 });
-            orders.order_status = order_status
+                appointments.appointment_status = appointment_status
 
             const laundry_owner_service = await model.laundry_owner_services
                 .findOne({
@@ -418,7 +416,7 @@ async function getOrderDetails(req, res, orders) {
                         ]
                     }
                 });
-            orders.los = laundry_owner_service
+                appointments.los = laundry_owner_service
 
             const service = await model.services
                 .findOne({
@@ -431,7 +429,7 @@ async function getOrderDetails(req, res, orders) {
                         ]
                     }
                 })
-            orders.los.service = service
+                appointments.los.service = service
 
             const category = await model.service_categories
                 .findOne({
@@ -444,7 +442,7 @@ async function getOrderDetails(req, res, orders) {
                         ]
                     }
                 })
-            orders.los.service.service_category = category;
+                appointments.los.service.service_category = category;
 
 
 
@@ -460,7 +458,7 @@ async function getOrderDetails(req, res, orders) {
                         ]
                     }
                 })
-            orders.los.laundry_owner = laundry_owner
+                appointments.los.laundry_owner = laundry_owner
 
             const laundry_address = await model.address
                 .findOne({
@@ -473,7 +471,7 @@ async function getOrderDetails(req, res, orders) {
                         ]
                     }
                 })
-            orders.los.laundry_owner.address = laundry_address;
+                appointments.los.laundry_owner.address = laundry_address;
 
 
 
@@ -488,7 +486,7 @@ async function getOrderDetails(req, res, orders) {
                         ]
                     }
                 })
-            orders.customer = customer
+                appointments.customer = customer
 
             const customer_address = await model.address
                 .findOne({
@@ -501,7 +499,7 @@ async function getOrderDetails(req, res, orders) {
                         ]
                     }
                 })
-            orders.customer.address = customer_address;
+                appointments.customer.address = customer_address;
 
 //             const order_comment = await model.order_comments
 //             .findAll({
@@ -547,18 +545,18 @@ async function getOrderDetails(req, res, orders) {
 //         }
 //             }
 
-        const order_ratings_review = await model.order_ratings_reviews
+        const appointment_ratings_review = await model.appointment_ratings_reviews
         .findAll({
             where: {
                 $and: [
                     sequelize.where(
-                        sequelize.fn('lower', sequelize.col('order')),
-                        sequelize.fn('lower', orders.order_id)
+                        sequelize.fn('lower', sequelize.col('appointment')),
+                        sequelize.fn('lower', appointments.appointment_id)
                     )
                 ]
             }
         })
-    order_ratings_reviews = order_ratings_review;
+        appointment_ratings_reviews = appointment_ratings_review;
 
 
 
@@ -568,7 +566,7 @@ async function getOrderDetails(req, res, orders) {
         }
     
 
-    const result = { 'orders': orders, /**'order_comments': order_comments,**/ 'order_ratings_reviews': order_ratings_reviews }
+    const result = { 'appointments': appointments, /**'order_comments': order_comments,**/ 'appointment_ratings_reviews': appointment_ratings_reviews }
     return res.status(200).send(result);
 
 }
@@ -576,22 +574,22 @@ async function getOrderDetails(req, res, orders) {
 
 
 
-router.post('/getLaundryOrdersByLaundryId', async function (req, res, next) {
+router.post('/getLaundryAppointmentsByLaundryId', async function (req, res, next) {
     let laundry_owner_id = req.body.laundry_owner_id;
 
     // CHECK IF THERE IS USER WITH THIS EMAIL
-    orders = []
+    appointments = []
     // laundry_ser = []
-    await Promise.resolve(model.orders
+    await Promise.resolve(model.appointments
         .findAll())
         .then(data => {
             if (!data || data.length <= 0) {
-                result = {"msg": "No Order Exist for this Laundry"}
+                result = {"msg": "No Appointment Exist for this Laundry"}
                 return res.status(400).send(result);
             }
             else {
-                orders = data
-                resolveLaundryOrders(req, res, orders, laundry_owner_id)
+                appointments = data
+                resolveLaundryAppointments(req, res, appointments, laundry_owner_id)
                 // console.log(laundry_owner_service)
             }
             // laundry_ser = laundry_owner_service
@@ -603,14 +601,14 @@ router.post('/getLaundryOrdersByLaundryId', async function (req, res, next) {
 
 
 
-async function resolveLaundryOrders(req, res, orders, laundry_owner_id) {
+async function resolveLaundryAppointments(req, res, appointments, laundry_owner_id) {
 
 
-    for (let i = 0; i < orders.length; i++) {
+    for (let i = 0; i < appointments.length; i++) {
 
-        customer_id = orders[i].customer
-        laundry_owner_service_id = orders[i].los
-        order_status_id = orders[i].order_status
+        customer_id = appointments[i].customer
+        laundry_owner_service_id = appointments[i].los
+        appointment_status_id = appointments[i].appointment_status
 
 
 
@@ -628,23 +626,23 @@ async function resolveLaundryOrders(req, res, orders, laundry_owner_id) {
                     }
                 });
                 if(laundry_owner_service.laundry_owner != laundry_owner_id){
-                    delete orders[i]
+                    delete appointments[i]
                     continue;
                 }
-            orders[i].los = laundry_owner_service
+                appointments[i].los = laundry_owner_service
 
-            const order_status = await model.order_status
+            const appointment_status = await model.appointment_status
                 .findOne({
                     where: {
                         $and: [
                             sequelize.where(
-                                sequelize.fn('lower', sequelize.col('order_status_id')),
-                                sequelize.fn('lower', order_status_id)
+                                sequelize.fn('lower', sequelize.col('appointment_status_id')),
+                                sequelize.fn('lower', appointment_status_id)
                             )
                         ]
                     }
                 });
-            orders[i].order_status = order_status
+                appointments[i].appointment_status = appointment_status
 
             
 
@@ -659,7 +657,7 @@ async function resolveLaundryOrders(req, res, orders, laundry_owner_id) {
                         ]
                     }
                 })
-            orders[i].los.service = service
+                appointments[i].los.service = service
 
             const category = await model.service_categories
                 .findOne({
@@ -672,7 +670,7 @@ async function resolveLaundryOrders(req, res, orders, laundry_owner_id) {
                         ]
                     }
                 })
-            orders[i].los.service.service_category = category;
+                appointments[i].los.service.service_category = category;
 
 
 
@@ -688,7 +686,7 @@ async function resolveLaundryOrders(req, res, orders, laundry_owner_id) {
                         ]
                     }
                 })
-            orders[i].los.laundry_owner = laundry_owner
+                appointments[i].los.laundry_owner = laundry_owner
 
             const laundry_address = await model.address
                 .findOne({
@@ -701,7 +699,7 @@ async function resolveLaundryOrders(req, res, orders, laundry_owner_id) {
                         ]
                     }
                 })
-            orders[i].los.laundry_owner.address = laundry_address;
+                appointments[i].los.laundry_owner.address = laundry_address;
 
 
 
@@ -716,7 +714,7 @@ async function resolveLaundryOrders(req, res, orders, laundry_owner_id) {
                         ]
                     }
                 })
-            orders[i].customer = customer
+                appointments[i].customer = customer
 
             const customer_address = await model.address
                 .findOne({
@@ -729,7 +727,7 @@ async function resolveLaundryOrders(req, res, orders, laundry_owner_id) {
                         ]
                     }
                 })
-            orders[i].customer.address = customer_address;
+                appointments[i].customer.address = customer_address;
 
 
 
@@ -738,16 +736,16 @@ async function resolveLaundryOrders(req, res, orders, laundry_owner_id) {
         }
     }
 
-    var filtered = orders.filter(function (el) {
+    var filtered = appointments.filter(function (el) {
 		return el != null;
       });
       
       if(filtered && filtered.length > 0){
-        const result = { 'orders': filtered }
+        const result = { 'appointments': filtered }
         return res.status(200).send(result);
       }
       else{
-       const result = {"msg": "No Order Exist for this Laundry"}
+       const result = {"msg": "No Appointment Exist for this Laundry"}
        return res.status(200).send(result);
       }
    
@@ -757,10 +755,10 @@ async function resolveLaundryOrders(req, res, orders, laundry_owner_id) {
 
 
 
-router.post('/updateOrderByOrderIdAndStatus', async function (req, res, next) {
-    let order_status = req.body.order.order_status;
-    let order_id = req.body.order.order_id;
-    let laundry_owner_id = req.body.order.laundry_owner_id
+router.post('/updateAppointmentByAppointmentIdAndStatus', async function (req, res, next) {
+    let appointment_status = req.body.appointment.appointment_status;
+    let appointment_id = req.body.appointment.appointment_id;
+    let laundry_owner_id = req.body.appointment.laundry_owner_id
     // let comment = {
     //     "comment": req.body.order.comment,
     //     "order": order_id,
@@ -770,18 +768,18 @@ router.post('/updateOrderByOrderIdAndStatus', async function (req, res, next) {
     // }
  
     
-const order = await model.orders.update(req.body.order, 
+const appointment = await model.appointments.update(req.body.appointment, 
 			
     {
     where: {
-        order_id: order_id
+        appointment_id: appointment_id
     }
 })
 // if(req.body.order.comment != "" && req.body.order.comment != null){
 //     const order_comment = await model.order_comments.create(comment)
 // }
 
-result = {"msg": "Order Updated Succesfully"}
+result = {"msg": "Appointment Updated Succesfully"}
 return res.status(400).send(result);
 
 });
@@ -790,13 +788,13 @@ return res.status(400).send(result);
 
 
 
-router.post('/getAllOrderStatus', async function (req, res, next) {
+router.post('/getAllAppointmentStatus', async function (req, res, next) {
  
 
     // CHECK IF THERE IS USER WITH THIS EMAIL
    
     // laundry_ser = []
-    await Promise.resolve(model.order_status
+    await Promise.resolve(model.appointment_status
         .findAll())
         .then(data => {
             if (!data || data.length <= 0) {
@@ -804,7 +802,7 @@ router.post('/getAllOrderStatus', async function (req, res, next) {
                 return res.status(400).send(result);
             }
             else {
-                result = {"order_status": data}
+                result = {"appointment_status": data}
                 return res.status(400).send(result);
                 // console.log(laundry_owner_service)
             }
@@ -817,33 +815,33 @@ router.post('/getAllOrderStatus', async function (req, res, next) {
 
 
 
-router.post('/getOrdersByStatusAndaundryId', async function (req, res, next) {
-    let order_status = req.body.order_status;
+router.post('/getAppointmentByStatusAndaundryId', async function (req, res, next) {
+    let appointment_status = req.body.appointment_status;
     let laundry_owner_id = req.body.laundry_owner_id;
  
 
     // CHECK IF THERE IS USER WITH THIS EMAIL
-    orders = []
+    appointments = []
     // laundry_ser = []
-    await Promise.resolve(model.orders
+    await Promise.resolve(model.appointments
         .findAll({
             where: {
                 $and: [
                     sequelize.where(
-                        sequelize.fn('lower', sequelize.col('order_status')),
-                        sequelize.fn('lower', parseInt(order_status))
+                        sequelize.fn('lower', sequelize.col('appointment_status')),
+                        sequelize.fn('lower', parseInt(appointment_status))
                     )
                 ]
             }
         }))
         .then(data => {
             if (!data || data.length <= 0) {
-                result = {"msg": "No Order Exist for this Laundry"}
+                result = {"msg": "No Appointment Exist for this Laundry"}
                 return res.status(400).send(result);
             }
             else {
-                orders = data
-                resolveOrdersByStatus(req, res, orders, laundry_owner_id)
+                appointments = data
+                resolveAppointmentsByStatus(req, res, appointments, laundry_owner_id)
                 // console.log(laundry_owner_service)
             }
             // laundry_ser = laundry_owner_service
@@ -855,14 +853,14 @@ router.post('/getOrdersByStatusAndaundryId', async function (req, res, next) {
 
 
 
-async function resolveOrdersByStatus(req, res, orders, laundry_owner_id) {
+async function resolveAppointmentsByStatus(req, res, appointments, laundry_owner_id) {
 
 
-    for (let i = 0; i < orders.length; i++) {
+    for (let i = 0; i < appointments.length; i++) {
 
-        customer_id = orders[i].customer
-        laundry_owner_service_id = orders[i].los
-        order_status_id = orders[i].order_status
+        customer_id = appointments[i].customer
+        laundry_owner_service_id = appointments[i].los
+        appointment_status_id = appointments[i].appointment_status
 
 
 
@@ -880,23 +878,23 @@ async function resolveOrdersByStatus(req, res, orders, laundry_owner_id) {
                     }
                 });
                 if(laundry_owner_service.laundry_owner != laundry_owner_id){
-                    delete orders[i]
+                    delete appointments[i]
                     continue;
                 }
-            orders[i].los = laundry_owner_service
+                appointments[i].los = laundry_owner_service
 
-            const order_status = await model.order_status
+            const appointment_status = await model.appointment_status
                 .findOne({
                     where: {
                         $and: [
                             sequelize.where(
-                                sequelize.fn('lower', sequelize.col('order_status_id')),
-                                sequelize.fn('lower', order_status_id)
+                                sequelize.fn('lower', sequelize.col('appointment_status_id')),
+                                sequelize.fn('lower', appointment_status_id)
                             )
                         ]
                     }
                 });
-            orders[i].order_status = order_status
+                appointments[i].appointment_status = appointment_status
 
             
 
@@ -911,7 +909,7 @@ async function resolveOrdersByStatus(req, res, orders, laundry_owner_id) {
                         ]
                     }
                 })
-            orders[i].los.service = service
+                appointments[i].los.service = service
 
             const category = await model.service_categories
                 .findOne({
@@ -924,7 +922,7 @@ async function resolveOrdersByStatus(req, res, orders, laundry_owner_id) {
                         ]
                     }
                 })
-            orders[i].los.service.service_category = category;
+                appointments[i].los.service.service_category = category;
 
 
 
@@ -940,7 +938,7 @@ async function resolveOrdersByStatus(req, res, orders, laundry_owner_id) {
                         ]
                     }
                 })
-            orders[i].los.laundry_owner = laundry_owner
+                appointments[i].los.laundry_owner = laundry_owner
 
             const laundry_address = await model.address
                 .findOne({
@@ -953,7 +951,7 @@ async function resolveOrdersByStatus(req, res, orders, laundry_owner_id) {
                         ]
                     }
                 })
-            orders[i].los.laundry_owner.address = laundry_address;
+                appointments[i].los.laundry_owner.address = laundry_address;
 
 
 
@@ -968,7 +966,7 @@ async function resolveOrdersByStatus(req, res, orders, laundry_owner_id) {
                         ]
                     }
                 })
-            orders[i].customer = customer
+                appointments[i].customer = customer
 
             const customer_address = await model.address
                 .findOne({
@@ -981,7 +979,7 @@ async function resolveOrdersByStatus(req, res, orders, laundry_owner_id) {
                         ]
                     }
                 })
-            orders[i].customer.address = customer_address;
+                appointments[i].customer.address = customer_address;
 
 
 
@@ -990,16 +988,16 @@ async function resolveOrdersByStatus(req, res, orders, laundry_owner_id) {
         }
     }
 
-    var filtered = orders.filter(function (el) {
+    var filtered = appointments.filter(function (el) {
 		return el != null;
       });
       
       if(filtered && filtered.length > 0){
-        const result = { 'orders': filtered }
+        const result = { 'appointments': filtered }
         return res.status(200).send(result);
       }
       else{
-       const result = {"msg": "No New Order Exist for this Laundry"}
+       const result = {"msg": "No New Appointment Exist for this Laundry"}
        return res.status(200).send(result);
       }
    
@@ -1013,21 +1011,21 @@ async function resolveOrdersByStatus(req, res, orders, laundry_owner_id) {
 
 
 
-router.post('/getOrdersByStatusAndCustomerId', async function (req, res, next) {
-    let order_status = req.body.order_status;
+router.post('/getAppointmentsByStatusAndCustomerId', async function (req, res, next) {
+    let appointment_status = req.body.appointment_status;
     let customer_id = req.body.customer_id;
  
 
     // CHECK IF THERE IS USER WITH THIS EMAIL
-    orders = []
+    appointments = []
     // laundry_ser = []
-    await Promise.resolve(model.orders
+    await Promise.resolve(model.appointments
         .findAll({
             where: {
                 $and: [
                     sequelize.where(
-                        sequelize.fn('lower', sequelize.col('order_status')),
-                        sequelize.fn('lower', parseInt(order_status))
+                        sequelize.fn('lower', sequelize.col('appointment_status')),
+                        sequelize.fn('lower', parseInt(appointment_status))
                     ),
                     sequelize.where(
                         sequelize.fn('lower', sequelize.col('customer')),
@@ -1039,12 +1037,12 @@ router.post('/getOrdersByStatusAndCustomerId', async function (req, res, next) {
         }))
         .then(data => {
             if (!data || data.length <= 0) {
-                result = {"msg": "No Order Exist for this Customer"}
+                result = {"msg": "No Appointment Exist for this Customer"}
                 return res.status(400).send(result);
             }
             else {
-                orders = data
-                resolveOrdersByStatusCustomer(req, res, orders)
+                appointments = data
+                resolveAppointmentsByStatusCustomer(req, res, appointments)
                 // console.log(laundry_owner_service)
             }
             // laundry_ser = laundry_owner_service
@@ -1056,14 +1054,14 @@ router.post('/getOrdersByStatusAndCustomerId', async function (req, res, next) {
 
 
 
-async function resolveOrdersByStatusCustomer(req, res, orders) {
+async function resolveAppointmentsByStatusCustomer(req, res, appointment) {
 
 
-    for (let i = 0; i < orders.length; i++) {
+    for (let i = 0; i < appointments.length; i++) {
 
-        customer_id = orders[i].customer
-        laundry_owner_service_id = orders[i].los
-        order_status_id = orders[i].order_status
+        customer_id = appointments[i].customer
+        laundry_owner_service_id = appointments[i].los
+        appointment_status_id = appointments[i].appointment_status
 
 
 
@@ -1081,20 +1079,20 @@ async function resolveOrdersByStatusCustomer(req, res, orders) {
                     }
                 });
         
-            orders[i].los = laundry_owner_service
+                appointments[i].los = laundry_owner_service
 
-            const order_status = await model.order_status
+            const appointment_status = await model.appointment_status
                 .findOne({
                     where: {
                         $and: [
                             sequelize.where(
-                                sequelize.fn('lower', sequelize.col('order_status_id')),
-                                sequelize.fn('lower', order_status_id)
+                                sequelize.fn('lower', sequelize.col('appointment_status_id')),
+                                sequelize.fn('lower', appointment_status_id)
                             )
                         ]
                     }
                 });
-            orders[i].order_status = order_status
+                appointments[i].appointment_status = appointment_status
 
             
 
@@ -1109,7 +1107,7 @@ async function resolveOrdersByStatusCustomer(req, res, orders) {
                         ]
                     }
                 })
-            orders[i].los.service = service
+                appointments[i].los.service = service
 
             const category = await model.service_categories
                 .findOne({
@@ -1122,7 +1120,7 @@ async function resolveOrdersByStatusCustomer(req, res, orders) {
                         ]
                     }
                 })
-            orders[i].los.service.service_category = category;
+                appointments[i].los.service.service_category = category;
 
 
 
@@ -1138,7 +1136,7 @@ async function resolveOrdersByStatusCustomer(req, res, orders) {
                         ]
                     }
                 })
-            orders[i].los.laundry_owner = laundry_owner
+                appointments[i].los.laundry_owner = laundry_owner
 
             const laundry_address = await model.address
                 .findOne({
@@ -1151,7 +1149,7 @@ async function resolveOrdersByStatusCustomer(req, res, orders) {
                         ]
                     }
                 })
-            orders[i].los.laundry_owner.address = laundry_address;
+                appointments[i].los.laundry_owner.address = laundry_address;
 
 
 
@@ -1166,7 +1164,7 @@ async function resolveOrdersByStatusCustomer(req, res, orders) {
                         ]
                     }
                 })
-            orders[i].customer = customer
+                appointments[i].customer = customer
 
             const customer_address = await model.address
                 .findOne({
@@ -1179,7 +1177,7 @@ async function resolveOrdersByStatusCustomer(req, res, orders) {
                         ]
                     }
                 })
-            orders[i].customer.address = customer_address;
+                appointments[i].customer.address = customer_address;
 
 
 
@@ -1188,16 +1186,16 @@ async function resolveOrdersByStatusCustomer(req, res, orders) {
         }
     }
 
-    var filtered = orders.filter(function (el) {
+    var filtered = appointments.filter(function (el) {
 		return el != null;
       });
       
       if(filtered && filtered.length > 0){
-        const result = { 'orders': filtered }
+        const result = { 'appointments': filtered }
         return res.status(200).send(result);
       }
       else{
-       const result = {"msg": "No New Order Exist for this Customer"}
+       const result = {"msg": "No New Appointment Exist for this Customer"}
        return res.status(200).send(result);
       }
    
@@ -1206,26 +1204,39 @@ async function resolveOrdersByStatusCustomer(req, res, orders) {
 
 
 
-router.post('/customerOrderStatistics', async function (req, res, next) {
+router.post('/customerAppointmentStatistics', async function (req, res, next) {
     let customer_id = req.body.customer_id;
 
 
-    let request_for_pickup = 0
-    let request_accepted = 0
-    let picked = 0
-    let in_progress = 0
-    let ready_for_delivery = 0
-    let delivered = 0
-    let rejected = 0
     let new_appointment = 0
     let appointment_accepted = 0
-    let appointment_in_progress = 0
-    let appointment_completed = 0
-    let appointment_rejected = 0
-    
+    let in_progress = 0
+    let completed = 0
+    let rejected = 0
     
     let b = 0
 await parallel([
+    async () => { 
+      await Promise.resolve(model.appointments
+        .count({
+            where: {
+                $and: [
+                    sequelize.where(
+                        sequelize.fn('lower', sequelize.col('customer')),
+                        sequelize.fn('lower', parseInt(customer_id))
+                    ),
+                    sequelize.where(
+                        sequelize.fn('lower', sequelize.col('appointment_status')),
+                        sequelize.fn('lower', parseInt(1))
+                    )
+                ]
+            }
+        }))
+        .then(data => {
+            new_appointment = data
+            
+     })
+    },
 
     async () => { 
         await Promise.resolve(model.appointments
@@ -1238,156 +1249,20 @@ await parallel([
                       ),
                       sequelize.where(
                           sequelize.fn('lower', sequelize.col('appointment_status')),
-                          sequelize.fn('lower', parseInt(1))
-                      )
-                  ]
-              }
-          }))
-          .then(data => {
-              new_appointment = data
-              
-       })
-      },
-  
-      async () => { 
-          await Promise.resolve(model.appointments
-            .count({
-                where: {
-                    $and: [
-                        sequelize.where(
-                            sequelize.fn('lower', sequelize.col('customer')),
-                            sequelize.fn('lower', parseInt(customer_id))
-                        ),
-                        sequelize.where(
-                            sequelize.fn('lower', sequelize.col('appointment_status')),
-                            sequelize.fn('lower', parseInt(2))
-                        )
-                    ]
-                }
-            }))
-            .then(data => {
-              appointment_accepted = data
-                
-         })
-        },
-  
-        
-      async () => { 
-          await Promise.resolve(model.appointments
-            .count({
-                where: {
-                    $and: [
-                        sequelize.where(
-                            sequelize.fn('lower', sequelize.col('customer')),
-                            sequelize.fn('lower', parseInt(customer_id))
-                        ),
-                        sequelize.where(
-                            sequelize.fn('lower', sequelize.col('appointment_status')),
-                            sequelize.fn('lower', parseInt(3))
-                        )
-                    ]
-                }
-            }))
-            .then(data => {
-                appointment_in_progress = data
-                
-         })
-        },
-  
-        
-      async () => { 
-          await Promise.resolve(model.appointments
-            .count({
-                where: {
-                    $and: [
-                        sequelize.where(
-                            sequelize.fn('lower', sequelize.col('customer')),
-                            sequelize.fn('lower', parseInt(customer_id))
-                        ),
-                        sequelize.where(
-                            sequelize.fn('lower', sequelize.col('appointment_status')),
-                            sequelize.fn('lower', parseInt(4))
-                        )
-                    ]
-                }
-            }))
-            .then(data => {
-                appointment_completed = data
-                
-         })
-        },
-  
-        
-      async () => { 
-          await Promise.resolve(model.appointments
-            .count({
-                where: {
-                    $and: [
-                        sequelize.where(
-                            sequelize.fn('lower', sequelize.col('customer')),
-                            sequelize.fn('lower', parseInt(customer_id))
-                        ),
-                        sequelize.where(
-                            sequelize.fn('lower', sequelize.col('appointment_status')),
-                            sequelize.fn('lower', parseInt(5))
-                        )
-                    ]
-                }
-            }))
-            .then(data => {
-              appointment_rejected = data
-                
-         })
-        },
-
-        
-    async () => { 
-      await Promise.resolve(model.orders
-        .count({
-            where: {
-                $and: [
-                    sequelize.where(
-                        sequelize.fn('lower', sequelize.col('customer')),
-                        sequelize.fn('lower', parseInt(customer_id))
-                    ),
-                    sequelize.where(
-                        sequelize.fn('lower', sequelize.col('order_status')),
-                        sequelize.fn('lower', parseInt(1))
-                    )
-                ]
-            }
-        }))
-        .then(data => {
-            request_for_pickup = data
-            
-     })
-    },
-
-    async () => { 
-        await Promise.resolve(model.orders
-          .count({
-              where: {
-                  $and: [
-                      sequelize.where(
-                          sequelize.fn('lower', sequelize.col('customer')),
-                          sequelize.fn('lower', parseInt(customer_id))
-                      ),
-                      sequelize.where(
-                          sequelize.fn('lower', sequelize.col('order_status')),
                           sequelize.fn('lower', parseInt(2))
                       )
                   ]
               }
           }))
           .then(data => {
-            request_accepted = data
+            appointment_accepted = data
               
        })
       },
 
       
     async () => { 
-        await Promise.resolve(model.orders
+        await Promise.resolve(model.appointments
           .count({
               where: {
                   $and: [
@@ -1396,31 +1271,8 @@ await parallel([
                           sequelize.fn('lower', parseInt(customer_id))
                       ),
                       sequelize.where(
-                          sequelize.fn('lower', sequelize.col('order_status')),
+                          sequelize.fn('lower', sequelize.col('appointment_status')),
                           sequelize.fn('lower', parseInt(3))
-                      )
-                  ]
-              }
-          }))
-          .then(data => {
-            picked = data
-              
-       })
-      },
-
-      
-    async () => { 
-        await Promise.resolve(model.orders
-          .count({
-              where: {
-                  $and: [
-                      sequelize.where(
-                          sequelize.fn('lower', sequelize.col('customer')),
-                          sequelize.fn('lower', parseInt(customer_id))
-                      ),
-                      sequelize.where(
-                          sequelize.fn('lower', sequelize.col('order_status')),
-                          sequelize.fn('lower', parseInt(4))
                       )
                   ]
               }
@@ -1433,7 +1285,7 @@ await parallel([
 
       
     async () => { 
-        await Promise.resolve(model.orders
+        await Promise.resolve(model.appointments
           .count({
               where: {
                   $and: [
@@ -1442,54 +1294,31 @@ await parallel([
                           sequelize.fn('lower', parseInt(customer_id))
                       ),
                       sequelize.where(
-                          sequelize.fn('lower', sequelize.col('order_status')),
+                          sequelize.fn('lower', sequelize.col('appointment_status')),
+                          sequelize.fn('lower', parseInt(4))
+                      )
+                  ]
+              }
+          }))
+          .then(data => {
+            completed = data
+              
+       })
+      },
+
+      
+    async () => { 
+        await Promise.resolve(model.appointments
+          .count({
+              where: {
+                  $and: [
+                      sequelize.where(
+                          sequelize.fn('lower', sequelize.col('customer')),
+                          sequelize.fn('lower', parseInt(customer_id))
+                      ),
+                      sequelize.where(
+                          sequelize.fn('lower', sequelize.col('appointment_status')),
                           sequelize.fn('lower', parseInt(5))
-                      )
-                  ]
-              }
-          }))
-          .then(data => {
-            ready_for_delivery = data
-              
-       })
-      },
-
-      
-    async () => { 
-        await Promise.resolve(model.orders
-          .count({
-              where: {
-                  $and: [
-                      sequelize.where(
-                          sequelize.fn('lower', sequelize.col('customer')),
-                          sequelize.fn('lower', parseInt(customer_id))
-                      ),
-                      sequelize.where(
-                          sequelize.fn('lower', sequelize.col('order_status')),
-                          sequelize.fn('lower', parseInt(6))
-                      )
-                  ]
-              }
-          }))
-          .then(data => {
-            delivered = data
-              
-       })
-      },
-
-      
-    async () => { 
-        await Promise.resolve(model.orders
-          .count({
-              where: {
-                  $and: [
-                      sequelize.where(
-                          sequelize.fn('lower', sequelize.col('customer')),
-                          sequelize.fn('lower', parseInt(customer_id))
-                      ),
-                      sequelize.where(
-                          sequelize.fn('lower', sequelize.col('order_status')),
-                          sequelize.fn('lower', parseInt(7))
                       )
                   ]
               }
@@ -1500,13 +1329,10 @@ await parallel([
        })
       },
 
-  ], 12)
-  const result = { "request_for_pickup": request_for_pickup , "request_accepted": request_accepted, 
-  "picked": picked, "in_progress":in_progress, "ready_for_delivery":ready_for_delivery,
-"delivered": delivered, "rejected":rejected, 
-"new_appointment": new_appointment , "appointment_accepted": appointment_accepted, 
-  "appointment_in_progress":appointment_in_progress,
- "appointment_completed": appointment_completed, "appointment_rejected":appointment_rejected}
+  ], 5)
+  const result = { "new_appointment": new_appointment , "appointment_accepted": appointment_accepted, 
+ "in_progress":in_progress,
+"completed": completed, "rejected":rejected}
   return res.status(200).send(result);
 
 
@@ -1515,24 +1341,16 @@ await parallel([
 
 
 
-router.post('/laundryOrderStatistics', async function (req, res, next) {
+router.post('/laundryAppointmentStatistics', async function (req, res, next) {
     let laundry_owner_id = req.body.laundry_owner_id;
 
-
-    let request_for_pickup = 0
-    let request_accepted = 0
-    let picked = 0
-    let in_progress = 0
-    let ready_for_delivery = 0
-    let delivered = 0
-    let rejected = 0
     let new_appointment = 0
     let appointment_accepted = 0
-    let appointment_in_progress = 0
-    let appointment_completed = 0
-    let appointment_rejected = 0
+    let in_progress = 0
+    let completed = 0
+    let rejected = 0
     
-      
+    let b = 0
 await parallel([
     async () => { 
       await Promise.resolve(model.appointments
@@ -1596,142 +1414,6 @@ await parallel([
               }
           }))
           .then(data => {
-            appointment_in_progress = data
-              
-       })
-      },
-
-      
-    async () => { 
-        await Promise.resolve(model.appointments
-          .count({
-              where: {
-                  $and: [
-                      sequelize.where(
-                          sequelize.fn('lower', sequelize.col('laundry_owner_id')),
-                          sequelize.fn('lower', parseInt(laundry_owner_id))
-                      ),
-                      sequelize.where(
-                          sequelize.fn('lower', sequelize.col('appointment_status')),
-                          sequelize.fn('lower', parseInt(4))
-                      )
-                  ]
-              }
-          }))
-          .then(data => {
-            appointment_completed = data
-              
-       })
-      },
-
-      
-    async () => { 
-        await Promise.resolve(model.appointments
-          .count({
-              where: {
-                  $and: [
-                      sequelize.where(
-                          sequelize.fn('lower', sequelize.col('laundry_owner_id')),
-                          sequelize.fn('lower', parseInt(laundry_owner_id))
-                      ),
-                      sequelize.where(
-                          sequelize.fn('lower', sequelize.col('appointment_status')),
-                          sequelize.fn('lower', parseInt(5))
-                      )
-                  ]
-              }
-          }))
-          .then(data => {
-            appointment_rejected = data
-              
-       })
-      },
-
-    async () => { 
-      await Promise.resolve(model.orders
-        .count({
-            where: {
-                $and: [
-                    sequelize.where(
-                        sequelize.fn('lower', sequelize.col('laundry_owner_id')),
-                        sequelize.fn('lower', parseInt(laundry_owner_id))
-                    ),
-                    sequelize.where(
-                        sequelize.fn('lower', sequelize.col('order_status')),
-                        sequelize.fn('lower', parseInt(1))
-                    )
-                ]
-            }
-        }))
-        .then(data => {
-            request_for_pickup = data
-            
-     })
-    },
-
-    async () => { 
-        await Promise.resolve(model.orders
-          .count({
-              where: {
-                  $and: [
-                      sequelize.where(
-                          sequelize.fn('lower', sequelize.col('laundry_owner_id')),
-                          sequelize.fn('lower', parseInt(laundry_owner_id))
-                      ),
-                      sequelize.where(
-                          sequelize.fn('lower', sequelize.col('order_status')),
-                          sequelize.fn('lower', parseInt(2))
-                      )
-                  ]
-              }
-          }))
-          .then(data => {
-            request_accepted = data
-              
-       })
-      },
-
-      
-    async () => { 
-        await Promise.resolve(model.orders
-          .count({
-              where: {
-                  $and: [
-                      sequelize.where(
-                          sequelize.fn('lower', sequelize.col('laundry_owner_id')),
-                          sequelize.fn('lower', parseInt(laundry_owner_id))
-                      ),
-                      sequelize.where(
-                          sequelize.fn('lower', sequelize.col('order_status')),
-                          sequelize.fn('lower', parseInt(3))
-                      )
-                  ]
-              }
-          }))
-          .then(data => {
-            picked = data
-              
-       })
-      },
-
-      
-    async () => { 
-        await Promise.resolve(model.orders
-          .count({
-              where: {
-                  $and: [
-                      sequelize.where(
-                          sequelize.fn('lower', sequelize.col('laundry_owner_id')),
-                          sequelize.fn('lower', parseInt(laundry_owner_id))
-                      ),
-                      sequelize.where(
-                          sequelize.fn('lower', sequelize.col('order_status')),
-                          sequelize.fn('lower', parseInt(4))
-                      )
-                  ]
-              }
-          }))
-          .then(data => {
             in_progress = data
               
        })
@@ -1739,7 +1421,7 @@ await parallel([
 
       
     async () => { 
-        await Promise.resolve(model.orders
+        await Promise.resolve(model.appointments
           .count({
               where: {
                   $and: [
@@ -1748,54 +1430,31 @@ await parallel([
                           sequelize.fn('lower', parseInt(laundry_owner_id))
                       ),
                       sequelize.where(
-                          sequelize.fn('lower', sequelize.col('order_status')),
+                          sequelize.fn('lower', sequelize.col('appointment_status')),
+                          sequelize.fn('lower', parseInt(4))
+                      )
+                  ]
+              }
+          }))
+          .then(data => {
+            completed = data
+              
+       })
+      },
+
+      
+    async () => { 
+        await Promise.resolve(model.appointments
+          .count({
+              where: {
+                  $and: [
+                      sequelize.where(
+                          sequelize.fn('lower', sequelize.col('laundry_owner_id')),
+                          sequelize.fn('lower', parseInt(laundry_owner_id))
+                      ),
+                      sequelize.where(
+                          sequelize.fn('lower', sequelize.col('appointment_status')),
                           sequelize.fn('lower', parseInt(5))
-                      )
-                  ]
-              }
-          }))
-          .then(data => {
-            ready_for_delivery = data
-              
-       })
-      },
-
-      
-    async () => { 
-        await Promise.resolve(model.orders
-          .count({
-              where: {
-                  $and: [
-                      sequelize.where(
-                          sequelize.fn('lower', sequelize.col('laundry_owner_id')),
-                          sequelize.fn('lower', parseInt(laundry_owner_id))
-                      ),
-                      sequelize.where(
-                          sequelize.fn('lower', sequelize.col('order_status')),
-                          sequelize.fn('lower', parseInt(6))
-                      )
-                  ]
-              }
-          }))
-          .then(data => {
-            delivered = data
-              
-       })
-      },
-
-      
-    async () => { 
-        await Promise.resolve(model.orders
-          .count({
-              where: {
-                  $and: [
-                      sequelize.where(
-                          sequelize.fn('lower', sequelize.col('laundry_owner_id')),
-                          sequelize.fn('lower', parseInt(laundry_owner_id))
-                      ),
-                      sequelize.where(
-                          sequelize.fn('lower', sequelize.col('order_status')),
-                          sequelize.fn('lower', parseInt(7))
                       )
                   ]
               }
@@ -1806,13 +1465,11 @@ await parallel([
        })
       },
 
-  ], 12)
-  const result = { "request_for_pickup": request_for_pickup , "request_accepted": request_accepted, 
-  "picked": picked, "in_progress":in_progress, "ready_for_delivery":ready_for_delivery,
-"delivered": delivered, "rejected":rejected, 
-"new_appointment": new_appointment , "appointment_accepted": appointment_accepted, 
-  "appointment_in_progress":appointment_in_progress,
- "appointment_completed": appointment_completed, "appointment_rejected":appointment_rejected}
+      
+  ], 7)
+  const result = { "new_appointment": new_appointment , "appointment_accepted": appointment_accepted, 
+  "in_progress":in_progress,
+ "completed": completed, "rejected":rejected}
   return res.status(200).send(result);
 
 

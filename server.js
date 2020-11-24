@@ -9,6 +9,7 @@ var mysql = require('mysql2');
 var usersCtrl = require('./controllers/users');
 var adminCtrl = require('./controllers/admins');
 var ordersCtrl = require('./controllers/orders');
+var appointmentCtrl = require('./controllers/appointments');
 var servicesCtrl = require('./controllers/services')
 var financialDetailsCtrl = require('./controllers/financial_details')
 
@@ -87,6 +88,7 @@ app.use('/services', servicesCtrl);
 app.use('/admin', adminCtrl)
 app.use('/financialDetails', financialDetailsCtrl);
 app.use('/orders', ordersCtrl);
+app.use('/appointments', appointmentCtrl);
 
 app.listen(3000, function() {
 	console.log('server running on port 3000', '');
