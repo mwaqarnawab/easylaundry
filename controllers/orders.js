@@ -192,24 +192,38 @@ async function resolveCustomerOrders(req, res, orders) {
 }
 
 
-router.post('/placeOrder', function (req, res, next) {
+router.post('/placeOrder', async function (req, res, next) {
     order_detail = req.body.order
     order_detail.order_status = 1
 
-    trans.execTrans(res, t => {
-        return Promise.resolve(model.orders
-            .create(order_detail, {
-                transaction: t
 
-            }))
-            .then(order => {
+    const tax = await model.tax_details.findOne(
 
-                t.commit();
+
+		{
+			where: {
+				$or: [
+					sequelize.where(
+						sequelize.fn('lower', sequelize.col('user')),
+						sequelize.fn('lower', order_detail.laundry_owner_id)
+					),
+				]
+			}
+		})
+    
+        if(tax && tax != null){
+            tax_percentage = parseInt(tax.tax_percentage)
+            order_detail.total_price += (parseInt(order_detail.total_price) * tax_percentage)/100
+        }
+
+    const order = await model.orders
+            .create(order_detail)
+           
                 result = { "msg": "Order have been placed, Please Wait for Laundry to Accept Your Order", "order": order }
                 res.status(200).send(result)
                 return
-            });
-    });
+            
+    
 });
 
 

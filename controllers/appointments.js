@@ -190,24 +190,39 @@ async function resolveCustomerAppointments(req, res, appointments) {
 }
 
 
-router.post('/placeAppointment', function (req, res, next) {
+router.post('/placeAppointment',async function (req, res, next) {
     appointment_detail = req.body.appointment
     appointment_detail.appointment_status = 1
 
-    trans.execTrans(res, t => {
-        return Promise.resolve(model.appointments
-            .create(appointment_detail, {
-                transaction: t
 
-            }))
-            .then(appointments => {
+    const tax = await model.tax_details.findOne(
 
-                t.commit();
+
+		{
+			where: {
+				$or: [
+					sequelize.where(
+						sequelize.fn('lower', sequelize.col('user')),
+						sequelize.fn('lower', appointment_detail.laundry_owner_id)
+					),
+				]
+			}
+		})
+    
+        if(tax && tax != null){
+            tax_percentage = parseInt(tax.tax_percentage)
+            appointment_detail.total_price += (parseInt(appointment_detail.total_price) * tax_percentage)/100
+        }
+
+
+   const appointments = await model.appointments
+            .create(appointment_detail)
+            
+
                 result = { "msg": "Appointment have been placed, Please Wait for Laundry to Accept Your Appointment", "appointment": appointments }
                 res.status(200).send(result)
                 return
-            });
-    });
+        
 });
 
 
