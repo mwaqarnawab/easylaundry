@@ -1111,6 +1111,25 @@ async function resolveOrdersByStatusCustomer(req, res, orders) {
                 })
             orders[i].los.service = service
 
+            const rating_reviews = await model.order_ratings_reviews
+                .findOne({
+                    where: {
+                        $and: [
+                            sequelize.where(
+                                sequelize.fn('lower', sequelize.col('order')),
+                                sequelize.fn('lower', parseInt(orders[i].order_id))
+                            )
+                        ]
+                    }
+                })
+                
+                    if (!rating_reviews) {
+                        orders[i].is_rating_done = 0
+                    }
+                    else{
+                        orders[i].is_rating_done = 1
+                    }
+
             const category = await model.service_categories
                 .findOne({
                     where: {
@@ -1180,6 +1199,9 @@ async function resolveOrdersByStatusCustomer(req, res, orders) {
                     }
                 })
             orders[i].customer.address = customer_address;
+
+
+           
 
 
 

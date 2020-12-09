@@ -728,11 +728,11 @@ router.post('/login', function (req, res, next) {
 		.then(data => {
 			if (data) {
 				if(data.status == 0 || data.status == '0'){
-					response = {"msg": "Your Account is not Active"}
+					response = {"msg": "Your Account is not Active", "user_status": 0}
 					res.status(400).send(response)
 				}
 				if(data.status == 2 || data.status == '2'){
-					response = {"msg": "Your Account is Blacklisted"}
+					response = {"msg": "Your Account is Blacklisted", "user_status": 2}
 					res.status(400).send(response)
 				}
 				

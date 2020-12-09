@@ -42,6 +42,10 @@ module.exports = function(sequelize, DataTypes) {
 				type: DataTypes.INTEGER,
 				allowNull: true
 			},
+			is_rating_done: {
+				type: DataTypes.INTEGER,
+				allowNull: true
+			},
 			pickup_address: {
 				type: DataTypes.STRING(450),
 				allowNull: true

@@ -1081,6 +1081,25 @@ async function resolveAppointmentsByStatusCustomer(req, res, appointment) {
         
                 appointments[i].los = laundry_owner_service
 
+                const rating_reviews = await model.appointment_ratings_reviews
+                .findOne({
+                    where: {
+                        $and: [
+                            sequelize.where(
+                                sequelize.fn('lower', sequelize.col('appointment')),
+                                sequelize.fn('lower', parseInt(appointments[i].appointment_id))
+                            )
+                        ]
+                    }
+                })
+                
+                    if (!rating_reviews) {
+                        appointments[i].is_rating_done = 0
+                    }
+                    else{
+                        appointments[i].is_rating_done = 1
+                    }
+
             const appointment_status = await model.appointment_status
                 .findOne({
                     where: {
@@ -1213,6 +1232,7 @@ router.post('/customerAppointmentStatistics', async function (req, res, next) {
     let in_progress = 0
     let completed = 0
     let rejected = 0
+    
     
     let b = 0
 await parallel([
@@ -1350,7 +1370,6 @@ router.post('/laundryAppointmentStatistics', async function (req, res, next) {
     let completed = 0
     let rejected = 0
     
-    let b = 0
 await parallel([
     async () => { 
       await Promise.resolve(model.appointments

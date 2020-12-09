@@ -326,7 +326,69 @@ router.post('/getAllLaundryOwners', async function (req, res, next) {
 		})
 		
     
+		
+		
+router.post('/getAllCustomers', async function (req, res, next) {
+	let user = req.body;
+	customers = []
+
+	// CHECK IF THERE IS ANOTHER USER WITH THE SAME NAME
+	await Promise.resolve(model.users
+		.findAll(
+			{
+				where: {
+					$or: [
+						sequelize.where(
+							sequelize.fn('lower', sequelize.col('role')),
+							sequelize.fn('lower', 3)
+						),
+						
+					]
+				}
+			}
+		))
+		.then(data => {
+			if (data) {
+				customers = data
+			}
+		
+			else {
+				res.status(400).send('No Customer Exist');
+				return;
+			}
+
+		})
+
+
+		for (let i = 0; i < customers.length; i++) {
+
+			const address = await model.address
+		.findOne({
+			where: {
+				$or: [
+					sequelize.where(
+						sequelize.fn('lower', sequelize.col('address_id')),
+						sequelize.fn('lower', customers[i].address)
+					),
+					
+				]
+			}
+        })
         
+    // await waitFor(500)
+		
+	customers[i].address = address
+	customers[i].password = ""
+			
+			
+        }
+        
+		result = { 'customers': customers }
+		return res.status(200).send(result);
+		
+			
+		})
+		
 
 router.post('/getAllLaundryOwnersByStatus', async function (req, res, next) {
 	let user_status = req.body.user_status;
@@ -423,6 +485,71 @@ router.post('/getAllLaundryOwnersByStatus', async function (req, res, next) {
         }
         
 		result = { 'laundryOwners': laundryOwners }
+		return res.status(200).send(result);
+		
+			
+		})
+		
+			
+		
+router.post('/getAllCustomersByStatus', async function (req, res, next) {
+	let user_status = req.body.user_status;
+	customers = []
+
+	// CHECK IF THERE IS ANOTHER USER WITH THE SAME NAME
+	await Promise.resolve(model.users
+		.findAll(
+			{
+				where: {
+					$and: [
+						sequelize.where(
+							sequelize.fn('lower', sequelize.col('role')),
+							sequelize.fn('lower', 3)
+                        ),
+                        sequelize.where(
+							sequelize.fn('lower', sequelize.col('status')),
+							sequelize.fn('lower', parseInt(user_status))
+						),
+						
+					]
+				}
+			}
+		))
+		.then(data => {
+			if (data) {
+				customers = data
+			}
+		
+			else {
+				res.status(400).send('No Customer Exist With this Status');
+				return;
+			}
+
+		})
+
+
+		for (let i = 0; i < customers.length; i++) {
+
+			const address = await model.address
+		.findOne({
+			where: {
+				$or: [
+					sequelize.where(
+						sequelize.fn('lower', sequelize.col('address_id')),
+						sequelize.fn('lower', customers[i].address)
+					),
+					
+				]
+			}
+        })
+        
+		customers[i].address = address
+			customers[i].password = ""
+			
+			
+        }
+        
+		result = { 'customers': customers }
 		return res.status(200).send(result);
 		
 			

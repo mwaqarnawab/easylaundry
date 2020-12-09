@@ -38,6 +38,10 @@ module.exports = function(sequelize, DataTypes) {
 				type: DataTypes.INTEGER,
 				allowNull: true
 			},
+			is_rating_done: {
+				type: DataTypes.INTEGER,
+				allowNull: true
+			},
 			laundry_owner_id: {
 				type: DataTypes.INTEGER,
 				allowNull: true
