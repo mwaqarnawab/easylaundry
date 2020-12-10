@@ -273,6 +273,9 @@ router.post('/checkIfUserExist', function (req, res, next) {
 
 router.post('/register', function (req, res, next) {
 	req.body.user.role = parseInt(req.body.user.role)
+	if(parseInt(req.body.user.role) == 3){
+		req.body.user.status = 1
+	}
 	let user_detail = req.body.user;
 	let address_detail = req.body.address;
 	// console.log(address_detail.cnic_front)
@@ -396,6 +399,36 @@ router.post('/register', function (req, res, next) {
 										// fs.writeFileSync('images/user'+user.user_id+'front.'+image_extension, buff);
 
 										t.commit();
+
+										if(parseInt(req.body.user.role) == 2){
+										var nodemailer = require('nodemailer');
+
+										var transporter = nodemailer.createTransport({
+											service: 'gmail',
+											auth: {
+												user: 'easylaundry.pk@gmail.com',
+												pass: 'EasyLaundry@12'
+											}
+										});
+
+										var mailOptions = {
+											from: 'easylaundry.pk@gmail.com',
+											to: user.email,
+											subject: 'EasyLaundry - Registration',
+											html: '<p> Hi '+ user.first_name+ ', </p> <br/> <p> Your Request to Register with EasyLaundry has been received. Our Administration will review your informaion and Approve/Reject your account</p> <br/> <br/> <p> BR, </p> <p> EasyLaundry</p>'
+
+											// text: 'Hi '+ user.first_name+ ', Your Request to Register with EasyLaundry has been received. Our Administration will review your informaion and Approve/Reject your account'
+										};
+
+										transporter.sendMail(mailOptions, function (error, info) {
+											if (error) {
+												console.log(error);
+											} else {
+												console.log('Email sent: ' + info.response);
+											}
+										});
+									}
+
 										res.status(200).send(user)
 										return
 

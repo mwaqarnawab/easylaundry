@@ -16,6 +16,7 @@ const { request } = require('express');
 
 router.post('/registerLaundry', function (req, res, next) {
 	req.body.user.role = parseInt(req.body.user.role)
+	req.body.user.status = 1
 	let user_detail = req.body.user;
 	let address_detail = req.body.address;
 	// console.log(address_detail.cnic_front)
@@ -163,19 +164,65 @@ router.post('/activateDeactivateUser',async function (req, res, next) {
 		where: {
 			user_id: user_id
 		}
-    })
+	})
+	
+	const user = await model.users.findOne( 
+			
+		{
+		where: {
+			user_id: user_id
+		}
+	})
+	
     if(user_status == '1'){
-        msg = "User has been activated"
+		msg = "User has been activated"
+		email_body = "Activated! Please use our mobile app to Login to your account."
+		accountStatus = "Activation"
     }
     if(user_status == '0'){
-        msg = "User has been de-activated"
-    }
-    if(user_status == '2'){
-        msg = "User has been Blacklisted"
-    }
+		msg = "User has been de-activated"
+		email_body = "de-activated"
+		accountStatus = "de-Activation"
+	}
+	if (user_status == '2') {
+		msg = "User has been Blacklisted"
+		email_body = "Blacklisted due to some Violation. Please contact easylaundry.pk@gmail.com for further details."
+		accountStatus = "Blacklisted"
+	}
 
-		result = {"msg": msg}
-		res.status(200).send(result)
+
+	var nodemailer = require('nodemailer');
+
+	var transporter = nodemailer.createTransport({
+		service: 'gmail',
+		auth: {
+			user: 'easylaundry.pk@gmail.com',
+			pass: 'EasyLaundry@12'
+		}
+	});
+
+	var mailOptions = {
+		from: 'easylaundry.pk@gmail.com',
+		to: user.email,
+		subject: 'EasyLaundry - Account '+accountStatus,
+		html: '<p> Hi ' + user.first_name + ', </p> <br/> <p> Your EasyLaundry Account has been ' + email_body+ '</p> <br/> <br/> <p> BR, </p> <p> EasyLaundry</p>'
+
+		// text: 'Hi '+ user.first_name+ ', Your Request to Register with EasyLaundry has been received. Our Administration will review your informaion and Approve/Reject your account'
+	};
+
+	transporter.sendMail(mailOptions, function (error, info) {
+		if (error) {
+			console.log(error);
+		} else {
+			console.log('Email sent: ' + info.response);
+		}
+	});
+
+
+
+
+	result = { "msg": msg }
+	res.status(200).send(result)
 		return
 				
 });

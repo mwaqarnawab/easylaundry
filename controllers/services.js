@@ -185,7 +185,178 @@ router.post('/addService', function (req, res, next) {
 });
 
 
-router.post('/updateService', function (req, res, next) {
+router.post('/updateService',async function (req, res, next) {
+	let request = req.body.service;
+
+	// CHECK IF THERE IS ANOTHER USER WITH THE SAME NAME
+	   const changes = await model.services_change_requests
+		   .findOne({
+			   where: {
+				   $and: [
+					   sequelize.where(
+						   sequelize.fn('lower', sequelize.col('los_id')),
+						   sequelize.fn('lower', request.los_id)
+					   )
+
+				   ]
+			   }
+		   })
+		if(changes && changes!=null){
+			const updatedChanges = await model.services_change_requests
+		
+					.update(
+						{
+							description: request.description,
+							charges: request.charges
+						},
+						{
+							where: {
+								los_id: request.los_id
+							}
+						}
+					)
+					
+				
+		
+					
+			
+		}
+		else{
+
+			
+
+	const service = await model.services_change_requests
+
+			.create(request)
+			
+				
+
+		}
+
+
+		const los_detail = await model.laundry_owner_services
+		   .findOne({
+			   where: {
+				   $and: [
+					   sequelize.where(
+						   sequelize.fn('lower', sequelize.col('los_id')),
+						   sequelize.fn('lower', request.los_id)
+					   )
+
+				   ]
+			   }
+		   })
+
+		   const service_detail = await model.services
+		   .findOne({
+			   where: {
+				   $and: [
+					   sequelize.where(
+						   sequelize.fn('lower', sequelize.col('service_id')),
+						   sequelize.fn('lower', los_detail.service)
+					   )
+
+				   ]
+			   }
+		   })
+		   const service_category = await model.service_categories
+		   .findOne({
+			   where: {
+				   $and: [
+					   sequelize.where(
+						   sequelize.fn('lower', sequelize.col('category_id')),
+						   sequelize.fn('lower', service_detail.service_category)
+					   )
+
+				   ]
+			   }
+		   })
+
+		const users = await model.users.findOne( 
+			
+			{
+			where: {
+				user_id: los_detail.laundry_owner
+			}
+		})
+		var nodemailer = require('nodemailer');
+	
+		var transporter = nodemailer.createTransport({
+			service: 'gmail',
+			auth: {
+				user: 'easylaundry.pk@gmail.com',
+				pass: 'EasyLaundry@12'
+			}
+		});
+	
+		var mailOptions = {
+			from: 'easylaundry.pk@gmail.com',
+			to: users.email,
+			subject: 'EasyLaundry - Service Change Request ',
+			html: '<p> Hi ' + users.first_name + ', </p> <br/> <p> We have Received Change Request in one of your EasyLaundry service. Below is the detail of change request' +
+			'</p> <br/> <p> <b> Service Category: </b>  ' + ' ' + service_category.category+ '</p>'+
+			'</p>  <p> <b> Service Name: </b>  ' + ' ' + service_detail.service_name+ '</p>'+
+			'</p>  <p> <b> Description: </b>  ' + ' ' + request.description+ '</p>'+
+			'<p> <b> Charges: </b>  ' + ' ' + request.charges+ '</p>'+
+			'<p> EasyLaundry Administration will review your change Requests and Approve/Reject them. </P>'+
+			'<br/><p> BR, </p> <p> EasyLaundry</p>',
+	
+			// text: 'Hi '+ user.first_name+ ', Your Request to Register with EasyLaundry has been received. Our Administration will review your informaion and Approve/Reject your account'
+		};
+	
+		transporter.sendMail(mailOptions, function (error, info) {
+			if (error) {
+				console.log(error);
+			} else {
+				console.log('Email sent: ' + info.response);
+			}
+		});
+	
+	
+res.status(200).send('Service Updated Successfully')
+				return
+
+		
+	//    }
+
+	//    });
+
+});
+
+
+
+
+router.post('/sendEmail',async function (req, res, next) {
+	var nodemailer = require('nodemailer');
+
+var transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: 'easylaundry.pk@gmail.com',
+    pass: 'EasyLaundry@12'
+  }
+});
+
+var mailOptions = {
+  from: 'easylaundry.pk@gmail.com',
+  to: 'waqarnawab12@gmail.com',
+  subject: 'Sending Email using Node.js',
+  text: 'That was easy!'
+};
+
+transporter.sendMail(mailOptions, function(error, info){
+  if (error) {
+    console.log(error);
+  } else {
+    console.log('Email sent: ' + info.response);
+  }
+});
+	
+
+});
+
+
+router.post('/approveServicesChangeRequest',async function (req, res, next) {
 	let request = req.body.service;
 
 	// CHECK IF THERE IS ANOTHER USER WITH THE SAME NAME
@@ -214,8 +385,7 @@ router.post('/updateService', function (req, res, next) {
 	// 			   else {
 
 
-	trans.execTrans(res, t => {
-		return Promise.resolve(model.laundry_owner_services
+	const service = await model.laundry_owner_services
 
 			.update(
 				{
@@ -225,24 +395,339 @@ router.post('/updateService', function (req, res, next) {
 				{
 					where: {
 						los_id: request.los_id
-					},
-					transaction: t,
-					individualHooks: true
+					}
 				}
-			))
-			.then(service => {
-				t.commit();
-				res.status(200).send('Service Updated Successfully')
+			)
+
+
+			const delService = await model.services_change_requests
+
+			.destroy(
+				{
+					where: {
+						los_id: request.los_id
+					}
+				}
+			)
+
+
+			
+		const los_detail = await model.laundry_owner_services
+		.findOne({
+			where: {
+				$and: [
+					sequelize.where(
+						sequelize.fn('lower', sequelize.col('los_id')),
+						sequelize.fn('lower', request.los_id)
+					)
+
+				]
+			}
+		})
+
+		const service_detail = await model.services
+		.findOne({
+			where: {
+				$and: [
+					sequelize.where(
+						sequelize.fn('lower', sequelize.col('service_id')),
+						sequelize.fn('lower', los_detail.service)
+					)
+
+				]
+			}
+		})
+		const service_category = await model.service_categories
+		.findOne({
+			where: {
+				$and: [
+					sequelize.where(
+						sequelize.fn('lower', sequelize.col('category_id')),
+						sequelize.fn('lower', service_detail.service_category)
+					)
+
+				]
+			}
+		})
+
+	 const users = await model.users.findOne( 
+		 
+		 {
+		 where: {
+			 user_id: los_detail.laundry_owner
+		 }
+	 })
+	 var nodemailer = require('nodemailer');
+ 
+	 var transporter = nodemailer.createTransport({
+		 service: 'gmail',
+		 auth: {
+			 user: 'easylaundry.pk@gmail.com',
+			 pass: 'EasyLaundry@12'
+		 }
+	 });
+ 
+	 var mailOptions = {
+		 from: 'easylaundry.pk@gmail.com',
+		 to: users.email,
+		 subject: 'EasyLaundry - Service Change Request - Approved ',
+		 html: '<p> Hi ' + users.first_name + ', </p> <br/> <p> Your Change Request for one of your EasyLaundry service has been approved. Below is the detail of change request' +
+		 '</p> <br/> <p> <b> Service Category: </b>  ' + ' ' + service_category.category+ '</p>'+
+		 '</p>  <p> <b> Service Name: </b>  ' + ' ' + service_detail.service_name+ '</p>'+
+		 '</p>  <p> <b> Description: </b>  ' + ' ' + request.description+ '</p>'+
+		 '<p> <b> Charges: </b>  ' + ' ' + request.charges+ '</p>'+
+		 
+		 '<br/><p> BR, </p> <p> EasyLaundry</p>',
+ 
+		 // text: 'Hi '+ user.first_name+ ', Your Request to Register with EasyLaundry has been received. Our Administration will review your informaion and Approve/Reject your account'
+	 };
+ 
+	 transporter.sendMail(mailOptions, function (error, info) {
+		 if (error) {
+			 console.log(error);
+		 } else {
+			 console.log('Email sent: ' + info.response);
+		 }
+	 });
+
+			result = {'msg':'Service Change Request Approved'}
+				res.status(200).send(result)
 				return
 
-			});
-	})
+			
+	
 	//    }
 
 	//    });
 
 });
 
+
+router.post('/retrieveAllChangeRequests', async function (req, res, next) {
+	// let user = req.body;
+
+	
+	
+	
+	const data = await model.services_change_requests
+		.findAll()
+		
+	if (data && data != null && data.length > 0) {
+		for (var i = 0; i < data.length; i++) {
+			
+			const los = await model.laundry_owner_services.findOne({
+				where: {
+					$and: [
+						sequelize.where(
+							sequelize.fn('lower', sequelize.col('los_id')),
+							sequelize.fn('lower', data[i].los_id)
+						)
+					]
+				}
+			})
+			data[i].los_id = los
+			
+			const laundry_owner = await model.users
+				.findOne({
+					where: {
+						$and: [
+							sequelize.where(
+								sequelize.fn('lower', sequelize.col('user_id')),
+								sequelize.fn('lower', los.laundry_owner)
+							)
+						]
+					}
+				})
+			const address = await model.address
+				.findOne({
+					where: {
+						$and: [
+							sequelize.where(
+								sequelize.fn('lower', sequelize.col('address_id')),
+								sequelize.fn('lower', laundry_owner.address)
+							)
+						]
+					}
+				})
+
+				laundry_owner.address = address
+				data[i].los_id.laundry_owner = laundry_owner
+			const service = await model.services
+				.findOne({
+					where: {
+						$and: [
+							sequelize.where(
+								sequelize.fn('lower', sequelize.col('service_id')),
+								sequelize.fn('lower', data[i].los_id.service)
+							)
+						]
+					}
+				})
+
+			const category =await model.service_categories
+				.findOne({
+					where: {
+						$and: [
+							sequelize.where(
+								sequelize.fn('lower', sequelize.col('category_id')),
+								sequelize.fn('lower', service.service_category)
+							)
+						]
+					}
+				})
+
+				service.service_category = category
+				data[i].los_id.service = service
+		}
+
+		result = {"data": data}
+		return res.status(200).send(result);
+
+	}
+	else {
+		result = { "msg": "No Change Request Exist" }
+		return res.status(400).send(result);
+	}
+
+});
+
+
+
+router.post('/rejectServicesChangeRequest',async function (req, res, next) {
+	let request = req.body.service;
+
+	// CHECK IF THERE IS ANOTHER USER WITH THE SAME NAME
+	//    model.laundry_owner_services
+	// 	   .findOne({
+	// 		   where: {
+	// 			   $and: [
+	// 				   sequelize.where(
+	// 					   sequelize.fn('lower', sequelize.col('service')),
+	// 					   sequelize.fn('lower', request.service)
+	// 				   ),
+	// 				   sequelize.where(
+	// 					   sequelize.fn('lower', sequelize.col('laundry_owner')),
+	// 					   sequelize.fn('lower', request.laundry_owner)
+	// 				   ),
+
+	// 			   ]
+	// 		   }
+	// 	   })
+	// 	   .then(data => {
+	// 		   if (data) {
+
+	// 				   res.status(400).send('The Service for this Laundry owner already Exist');
+	// 				   return;
+	// 			   }
+	// 			   else {
+
+
+
+			const delService = await model.services_change_requests
+
+			.destroy(
+				{
+					where: {
+						los_id: request.los_id
+					}
+				}
+			)
+
+
+
+				
+		const los_detail = await model.laundry_owner_services
+		.findOne({
+			where: {
+				$and: [
+					sequelize.where(
+						sequelize.fn('lower', sequelize.col('los_id')),
+						sequelize.fn('lower', request.los_id)
+					)
+
+				]
+			}
+		})
+
+		const service_detail = await model.services
+		.findOne({
+			where: {
+				$and: [
+					sequelize.where(
+						sequelize.fn('lower', sequelize.col('service_id')),
+						sequelize.fn('lower', los_detail.service)
+					)
+
+				]
+			}
+		})
+		const service_category = await model.service_categories
+		.findOne({
+			where: {
+				$and: [
+					sequelize.where(
+						sequelize.fn('lower', sequelize.col('category_id')),
+						sequelize.fn('lower', service_detail.service_category)
+					)
+
+				]
+			}
+		})
+
+	 const users = await model.users.findOne( 
+		 
+		 {
+		 where: {
+			 user_id: los_detail.laundry_owner
+		 }
+	 })
+	 var nodemailer = require('nodemailer');
+ 
+	 var transporter = nodemailer.createTransport({
+		 service: 'gmail',
+		 auth: {
+			 user: 'easylaundry.pk@gmail.com',
+			 pass: 'EasyLaundry@12'
+		 }
+	 });
+ 
+	 var mailOptions = {
+		 from: 'easylaundry.pk@gmail.com',
+		 to: users.email,
+		 subject: 'EasyLaundry - Service Change Request - Rejected ',
+		 html: '<p> Hi ' + users.first_name + ', </p> <br/> <p> Your Change Request for one of your EasyLaundry service has been Rejected. Below is the detail of change request' +
+		 '</p> <br/> <p> <b> Service Category: </b>  ' + ' ' + service_category.category+ '</p>'+
+		 '</p>  <p> <b> Service Name: </b>  ' + ' ' + service_detail.service_name+ '</p>'+
+		 '</p>  <p> <b> Description: </b>  ' + ' ' + request.description+ '</p>'+
+		 '<p> <b> Charges: </b>  ' + ' ' + request.charges+ '</p>'+
+
+		 '<br/><p> Please contact easylaundry.pk@gmail.com for further details.</p>'+
+		 
+		 '<br/><p> BR, </p> <p> EasyLaundry</p>',
+ 
+		 // text: 'Hi '+ user.first_name+ ', Your Request to Register with EasyLaundry has been received. Our Administration will review your informaion and Approve/Reject your account'
+	 };
+ 
+	 transporter.sendMail(mailOptions, function (error, info) {
+		 if (error) {
+			 console.log(error);
+		 } else {
+			 console.log('Email sent: ' + info.response);
+		 }
+	 });
+
+
+				result = {'msg':'Service Change Request Rejected'}
+				res.status(200).send(result)
+				return
+
+			
+	
+	//    }
+
+	//    });
+
+});
 
 
 router.get('/findAllCategories', function (req, res, next) {
