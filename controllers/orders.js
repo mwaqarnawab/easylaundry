@@ -791,6 +791,79 @@ const order = await model.orders.update(req.body.order,
         order_id: order_id
     }
 })
+
+if(order_status == 6){
+    const order_detail = await model.orders.findOne( 
+			
+        {
+        where: {
+            order_id: order_id
+        }
+    })
+    total_price = order_detail.total_price
+    const customer_financial_details = await model.financial_details.findOne( 
+			
+        {
+        where: {
+            user: order_detail.customer
+        }
+    })
+    if(customer_financial_details){
+        customer_financial_details.total_spending += total_price
+        const update_customer_financial = await model.financial_details.update({
+            total_spending: customer_financial_details.total_spending
+        }, 
+            
+			
+            {
+            where: {
+                user: order_detail.customer
+            }
+        })
+    }
+    else{
+        const create_customer_financial = await model.financial_details.create( {
+            total_spending: total_price,
+            user: order_detail.customer,
+            total_earning: 0
+        }
+        )
+    }
+    
+
+    const laundry_financial_details = await model.financial_details.findOne( 
+			
+        {
+        where: {
+            user: order_detail.laundry_owner_id
+        }
+    })
+    if(laundry_financial_details){
+        laundry_financial_details.total_earning += total_price
+        const update_laundry_financial = await model.financial_details.update( {
+            total_earning: laundry_financial_details.total_earning
+        }
+            ,
+			
+            {
+            where: {
+                user: order_detail.laundry_owner_id
+            }
+        })
+    }
+    else{
+        const create_laundry_financial = await model.financial_details.create( {
+            total_spending: 0,
+            user: order_detail.laundry_owner_id,
+            total_earning: total_price
+        }
+            
+        )
+    }
+    
+
+    
+}
 // if(req.body.order.comment != "" && req.body.order.comment != null){
 //     const order_comment = await model.order_comments.create(comment)
 // }

@@ -790,6 +790,89 @@ const appointment = await model.appointments.update(req.body.appointment,
         appointment_id: appointment_id
     }
 })
+
+
+
+
+
+
+
+if(appointment_status == 4){
+    const appointment_detail = await model.appointments.findOne( 
+			
+        {
+        where: {
+            appointment_id: appointment_id
+        }
+    })
+    total_price = appointment_detail.total_price
+    const customer_financial_details = await model.financial_details.findOne( 
+			
+        {
+        where: {
+            user: appointment_detail.customer
+        }
+    })
+    if(customer_financial_details){
+        customer_financial_details.total_spending += total_price
+        const update_customer_financial = await model.financial_details.update({
+            total_spending: customer_financial_details.total_spending
+        }, 
+            
+			
+            {
+            where: {
+                user: appointment_detail.customer
+            }
+        })
+    }
+    else{
+        const create_customer_financial = await model.financial_details.create( {
+            total_spending: total_price,
+            user: appointment_detail.customer,
+            total_earning: 0
+        }
+        )
+    }
+    
+
+    const laundry_financial_details = await model.financial_details.findOne( 
+			
+        {
+        where: {
+            user: appointment_detail.laundry_owner_id
+        }
+    })
+    if(laundry_financial_details){
+        laundry_financial_details.total_earning += total_price
+        const update_laundry_financial = await model.financial_details.update( {
+            total_earning: laundry_financial_details.total_earning
+        }
+            ,
+			
+            {
+            where: {
+                user: appointment_detail.laundry_owner_id
+            }
+        })
+    }
+    else{
+        const create_laundry_financial = await model.financial_details.create( {
+            total_spending: 0,
+            user: appointment_detail.laundry_owner_id,
+            total_earning: total_price
+        }
+            
+        )
+    }
+    
+
+    
+}
+
+
+
+
 // if(req.body.order.comment != "" && req.body.order.comment != null){
 //     const order_comment = await model.order_comments.create(comment)
 // }
