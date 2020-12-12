@@ -860,7 +860,7 @@ router.post('/findByLaundryOwner', async function (req, res, next) {
 	// CHECK IF THERE IS USER WITH THIS EMAIL
 	laundry_owner_service = []
 	// laundry_ser = []
-	await Promise.resolve(model.laundry_owner_services
+	const data = await model.laundry_owner_services
 		.findAll({
 			where: {
 				$and: [
@@ -870,18 +870,33 @@ router.post('/findByLaundryOwner', async function (req, res, next) {
 					)
 				]
 			}
-		}))
-		.then(data => {
+		})
+		
 			if (!data || data.length <= 0) {
 				return res.status(400).send("No Service Exist for this Laundry Owner");
 			}
 			else {
+
+				const tax = await model.tax_details.findOne(
+
+
+					{
+						where: {
+							$or: [
+								sequelize.where(
+									sequelize.fn('lower', sequelize.col('user')),
+									sequelize.fn('lower', req.body.laundry_owner)
+								),
+							]
+						}
+					})
 				laundry_owner_service = data
-				resolveLaundryOwnerServiceData(req, res, laundry_owner_service)
+
+				resolveLaundryOwnerServiceData(req, res, laundry_owner_service, tax)
 				// console.log(laundry_owner_service)
 			}
 			// laundry_ser = laundry_owner_service
-		})
+	
 
 		
 	
@@ -889,7 +904,7 @@ router.post('/findByLaundryOwner', async function (req, res, next) {
 
 
 
-async function resolveLaundryOwnerServiceData(req, res, laundry_owner_service) {
+async function resolveLaundryOwnerServiceData(req, res, laundry_owner_service, tax) {
 
 
   for (let i = 0; i < laundry_owner_service.length; i++) {
@@ -963,7 +978,7 @@ async function resolveLaundryOwnerServiceData(req, res, laundry_owner_service) {
     }
   }
 
-  const result = { 'services': laundry_owner_service }
+  const result = { 'services': laundry_owner_service, 'tax':  tax }
   return res.status(200).send(result);
 
 }
