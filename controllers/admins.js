@@ -5,6 +5,8 @@ var trans = require('../plugins/transaction');
 var ba64 = require("ba64");
 const fs = require('fs');
 
+const parallel = require('async-await-parallel')
+
 /* Include token authentication methods */
 var auth_file = require('../middleware/authentication')
 var createToken = auth_file.createToken
@@ -15,7 +17,9 @@ var sequelize = require('sequelize');
 const { request } = require('express');
 
 router.post('/registerLaundry', function (req, res, next) {
-	req.body.user.role = parseInt(req.body.user.role)
+	
+	// req.body.user.role = parseInt(req.body.user.role)
+	req.body.user.role = 2
 	req.body.user.status = 1
 	let user_detail = req.body.user;
 	let address_detail = req.body.address;
@@ -131,7 +135,37 @@ router.post('/registerLaundry', function (req, res, next) {
 										// 	ba64.writeImageSync("images/user"+user.user_id+"pntn", data_url);
 										// }
 										
-									
+											var nodemailer = require('nodemailer');
+	
+											var transporter = nodemailer.createTransport({
+												service: 'gmail',
+												auth: {
+													user: 'easylaundry.pk@gmail.com',
+													pass: 'EasyLaundry@12'
+												}
+											});
+											
+											email_body = "Activated! Please use our mobile app to Login to your account."
+											accountStatus = "Activation"
+
+											var mailOptions = {
+												from: 'easylaundry.pk@gmail.com',
+												to: user.email,
+												subject: 'EasyLaundry - Account',
+												html: '<p> Hi ' + user.first_name + ', </p> <br/> <p> Your EasyLaundry Account has been ' + email_body+ '</p> <br/> <br/> <p> BR, </p> <p> EasyLaundry</p>'
+
+												// text: 'Hi '+ user.first_name+ ', Your Request to Register with EasyLaundry has been received. Our Administration will review your informaion and Approve/Reject your account'
+											};
+	
+											transporter.sendMail(mailOptions, function (error, info) {
+												if (error) {
+													console.log(error);
+												} else {
+													console.log('Email sent: ' + info.response);
+												}
+											});
+										
+
 
 
 										// let buff = new Buffer.from(cnic_front_image, 'base64');
@@ -373,7 +407,208 @@ router.post('/getAllLaundryOwners', async function (req, res, next) {
 		})
 		
     
-		
+				
+router.post('/getLaundryCount', async function (req, res, next) {
+	
+	all = 0
+	active = 0
+	in_active = 0
+	blacklisted = 0
+	await parallel([
+		async () => { 
+		  await Promise.resolve(model.users
+			.count({
+				where: {
+					$and: [
+						  sequelize.where(
+							sequelize.fn('lower', sequelize.col('role')),
+							sequelize.fn('lower', 2)
+						)
+					]
+				}
+			}))
+			.then(data => {
+				all = data
+				
+		 })
+		},
+	
+		async () => { 
+			await Promise.resolve(model.users
+			  .count({
+				  where: {
+					  $and: [
+						  sequelize.where(
+							  sequelize.fn('lower', sequelize.col('status')),
+							  sequelize.fn('lower', parseInt(1))
+						  ),
+						  sequelize.where(
+							sequelize.fn('lower', sequelize.col('role')),
+							sequelize.fn('lower', 2)
+						)
+					  ]
+				  }
+			  }))
+			  .then(data => {
+				active = data
+				  
+		   })
+		  },
+	
+		  
+		async () => { 
+			await Promise.resolve(model.users
+			  .count({
+				  where: {
+					  $and: [
+						  sequelize.where(
+							  sequelize.fn('lower', sequelize.col('status')),
+							  sequelize.fn('lower', parseInt(0))
+						  ),
+						  sequelize.where(
+							sequelize.fn('lower', sequelize.col('role')),
+							sequelize.fn('lower', 2)
+						)
+					  ]
+				  }
+			  }))
+			  .then(data => {
+				in_active = data
+				  
+		   })
+		  },
+	
+		  
+		async () => { 
+			await Promise.resolve(model.users
+			  .count({
+				  where: {
+					  $and: [
+						  sequelize.where(
+							  sequelize.fn('lower', sequelize.col('status')),
+							  sequelize.fn('lower', parseInt(2))
+						  ),
+						  sequelize.where(
+							sequelize.fn('lower', sequelize.col('role')),
+							sequelize.fn('lower', 2)
+						)
+					  ]
+				  }
+			  }))
+			  .then(data => {
+				blacklisted = data
+				  
+		   })
+		  },
+	
+	  ], 4)
+	  const result = { "total_laundry": all , "active_laundry": active, 
+	 "inactive_laundry":in_active,
+	"blacklisted_laundry": blacklisted}
+	return res.status(200).send(result)
+
+	})
+				
+router.post('/getCustomersCount', async function (req, res, next) {
+	
+	all = 0
+	active = 0
+	in_active = 0
+	blacklisted = 0
+	await parallel([
+		async () => { 
+		  await Promise.resolve(model.users
+			.count({
+				where: {
+					$and: [
+						  sequelize.where(
+							sequelize.fn('lower', sequelize.col('role')),
+							sequelize.fn('lower', 3)
+						)
+					]
+				}
+			}))
+			.then(data => {
+				all = data
+				
+		 })
+		},
+	
+		async () => { 
+			await Promise.resolve(model.users
+			  .count({
+				  where: {
+					  $and: [
+						  sequelize.where(
+							  sequelize.fn('lower', sequelize.col('status')),
+							  sequelize.fn('lower', parseInt(1))
+						  ),
+						  sequelize.where(
+							sequelize.fn('lower', sequelize.col('role')),
+							sequelize.fn('lower', 3)
+						)
+					  ]
+				  }
+			  }))
+			  .then(data => {
+				active = data
+				  
+		   })
+		  },
+	
+		  
+		async () => { 
+			await Promise.resolve(model.users
+			  .count({
+				  where: {
+					  $and: [
+						  sequelize.where(
+							  sequelize.fn('lower', sequelize.col('status')),
+							  sequelize.fn('lower', parseInt(0))
+						  ),
+						  sequelize.where(
+							sequelize.fn('lower', sequelize.col('role')),
+							sequelize.fn('lower', 3)
+						)
+					  ]
+				  }
+			  }))
+			  .then(data => {
+				in_active = data
+				  
+		   })
+		  },
+	
+		  
+		async () => { 
+			await Promise.resolve(model.users
+			  .count({
+				  where: {
+					  $and: [
+						  sequelize.where(
+							  sequelize.fn('lower', sequelize.col('status')),
+							  sequelize.fn('lower', parseInt(2))
+						  ),
+						  sequelize.where(
+							sequelize.fn('lower', sequelize.col('role')),
+							sequelize.fn('lower', 3)
+						)
+					  ]
+				  }
+			  }))
+			  .then(data => {
+				blacklisted = data
+				  
+		   })
+		  },
+	
+	  ], 4)
+	  const result = { "total_customers": all , "active_customers": active, 
+	 "inactive_customers":in_active,
+	"blacklisted_customers": blacklisted}
+	return res.status(200).send(result)
+
+	})
 		
 router.post('/getAllCustomers', async function (req, res, next) {
 	let user = req.body;
