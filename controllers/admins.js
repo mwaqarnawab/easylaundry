@@ -28,23 +28,39 @@ router.post('/registerLaundry', function (req, res, next) {
 	cnic_back_image = ""
 	// pntn_certificate = ""
 
-	cnic_front_image_extension = ""
-	cnic_back_image_extension = ""
+	cnic_front_filename = address_detail.cnic_front_image_extension
+	cnic_back_filename = address_detail.cnic_back_image_extension
 	// pntn_certificate_extension = ""
 
+
+	
 	if(address_detail.cnic_front && address_detail.cnic_front != "" && address_detail.cnic_front != null){
-		cnic_front_image = address_detail.cnic_front
-		image_extension = cnic_front_image.substring("data:image/".length, cnic_front_image.indexOf(";base64"))
-		address_detail.cnic_front_image_extension = image_extension
+		cnic_front_filename_ext = cnic_front_filename.slice(cnic_front_filename.lastIndexOf('.') + 1);
+		cnic_front_image = "data:image/"+cnic_front_filename_ext+ ";base64," + address_detail.cnic_front
+		address_detail.cnic_front_image_extension = cnic_front_filename
 		address_detail.cnic_front = ""
 	}
 
 	if(address_detail.cnic_back && address_detail.cnic_back != "" && address_detail.cnic_back != null){
-		cnic_back_image = address_detail.cnic_back
-		image_extension = cnic_back_image.substring("data:image/".length, cnic_back_image.indexOf(";base64"))
-		address_detail.cnic_back_image_extension = image_extension
+		cnic_back_filename_ext = cnic_back_filename.slice(cnic_back_filename.lastIndexOf('.') + 1);
+		cnic_back_image = "data:image/"+cnic_back_filename_ext+ ";base64," + address_detail.cnic_back
+		address_detail.cnic_back_image_extension = cnic_back_filename
 		address_detail.cnic_back = ""
 	}
+
+	// if(address_detail.cnic_front && address_detail.cnic_front != "" && address_detail.cnic_front != null){
+	// 	cnic_front_image = address_detail.cnic_front
+	// 	image_extension = cnic_front_image.substring("data:image/".length, cnic_front_image.indexOf(";base64"))
+	// 	address_detail.cnic_front_image_extension = image_extension
+	// 	address_detail.cnic_front = ""
+	// }
+
+	// if(address_detail.cnic_back && address_detail.cnic_back != "" && address_detail.cnic_back != null){
+	// 	cnic_back_image = address_detail.cnic_back
+	// 	image_extension = cnic_back_image.substring("data:image/".length, cnic_back_image.indexOf(";base64"))
+	// 	address_detail.cnic_back_image_extension = image_extension
+	// 	address_detail.cnic_back = ""
+	// }
 
 	// if(address_detail.pntn_certificate && address_detail.pntn_certificate != "" && address_detail.pntn_certificate != null){
 	// 	pntn_certificate = address_detail.pntn_certificate
@@ -75,7 +91,7 @@ router.post('/registerLaundry', function (req, res, next) {
 		})
 		.then(data => {
 			if (!data) {
-				res.send(400, 'Role not found');
+				res.send(200, 'Role not found');
 				return;
 			}
 
@@ -97,7 +113,8 @@ router.post('/registerLaundry', function (req, res, next) {
 				})
 				.then(userdata => {
 					if (userdata) {
-						res.status(400).send('There is another user with this Email');
+						response = {"response": "There is another user with this Email"}
+						res.status(200).send(response);
 						return;
 					}
 
@@ -172,7 +189,8 @@ router.post('/registerLaundry', function (req, res, next) {
 										// fs.writeFileSync('images/user'+user.user_id+'front.'+image_extension, buff);
 
 										t.commit();
-										res.status(200).send(user)
+										result = {"response": "Registered Successfully"}
+										res.status(200).send(result)
 										return
 
 									});
@@ -302,7 +320,7 @@ router.post('/getUserById', function (req, res, next) {
 			})
 		}
 			else {
-				res.status(400).send('No User Found with this Id');
+				res.status(200).send('No User Found with this Id');
 				return;
 			}
 		});
@@ -335,7 +353,7 @@ router.post('/getAllLaundryOwners', async function (req, res, next) {
 			}
 		
 			else {
-				res.status(400).send('No Laundry Owner Exist');
+				res.status(200).send('No Laundry Owner Exist');
 				return;
 			}
 
@@ -356,20 +374,117 @@ router.post('/getAllLaundryOwners', async function (req, res, next) {
 				]
 			}
         })
+    //     if(address.cnic_front_image_extension && address.cnic_front_image_extension.indexOf(".") !== -1){
+    //         cnic_front_filename_ext = address.cnic_front_image_extension.slice(address.cnic_front_image_extension.lastIndexOf('.') + 1);
+    //         let imageUrl = "images/user"+laundryOwners[i].user_id+"front."+ cnic_front_filename_ext
+    //         let buff = await fs.readFileSync(imageUrl);
+    //         let cnic_front = buff.toString('base64');
+    //         address.cnic_front = cnic_front
+            
+    //     }
+    //     else if(address.cnic_front_image_extension && address.cnic_front_image_extension.indexOf(".") == -1){
+    //         cnic_front_filename_ext = address.cnic_front_image_extension;
+    //         let imageUrl = "images/user"+laundryOwners[i].user_id+"front."+ cnic_front_filename_ext
+    //         let buff = await fs.readFileSync(imageUrl);
+    //         let cnic_front = buff.toString('base64');
+    //         address.cnic_front = cnic_front
+    //     }
+        
+
+    // else{
+
+    // }
+    // // await waitFor(500)
+    //     if(address.cnic_back_image_extension && address.cnic_back_image_extension.indexOf(".") !== -1){
+    //         cnic_back_filename_ext = address.cnic_back_image_extension.slice(address.cnic_back_image_extension.lastIndexOf('.') + 1);
+    //         let imageUrl = "images/user"+laundryOwners[i].user_id+"back."+ cnic_back_filename_ext
+    //         let buff = await fs.readFileSync(imageUrl);
+    //         let cnic_back = buff.toString('base64');
+    //         address.cnic_back = cnic_back
+            
+    //     }
+    //     else if(address.cnic_back_image_extension && address.cnic_back_image_extension.indexOf(".") == -1){
+    //         cnic_back_filename_ext = address.cnic_back_image_extension;
+    //         let imageUrl = "images/user"+laundryOwners[i].user_id+"back."+ cnic_back_filename_ext
+    //         let buff = await fs.readFileSync(imageUrl);
+    //         let cnic_back = buff.toString('base64');
+    //         address.cnic_back = cnic_back
+    //     }
+    //     else{}
+		
+			laundryOwners[i].address = address
+			laundryOwners[i].password = ""
+			
+			
+        }
+        
+		result = { 'laundryOwners': laundryOwners }
+		return res.status(200).send(result);
+		
+			
+		})
+		
+	
+		
+		
+router.post('/getCnicImagesByLaundryOwnerId', async function (req, res, next) {
+	let user_id = req.body.user_id;
+	laundryOwner = null
+
+	// CHECK IF THERE IS ANOTHER USER WITH THE SAME NAME
+	await Promise.resolve(model.users
+		.findOne(
+			{
+				where: {
+					$or: [
+						sequelize.where(
+							sequelize.fn('lower', sequelize.col('user_id')),
+							sequelize.fn('lower', user_id)
+						),
+						
+					]
+				}
+			}
+		))
+		.then(data => {
+			if (data) {
+				laundryOwner = data
+			}
+		
+			else {
+				res.status(200).send('No Laundry Owner Exist');
+				return;
+			}
+
+		})
+
+			var cnic_front = null
+			var cnic_back = null
+			const address = await model.address
+		.findOne({
+			where: {
+				$or: [
+					sequelize.where(
+						sequelize.fn('lower', sequelize.col('address_id')),
+						sequelize.fn('lower', laundryOwner.address)
+					),
+					
+				]
+			}
+        })
         if(address.cnic_front_image_extension && address.cnic_front_image_extension.indexOf(".") !== -1){
             cnic_front_filename_ext = address.cnic_front_image_extension.slice(address.cnic_front_image_extension.lastIndexOf('.') + 1);
-            let imageUrl = "images/user"+laundryOwners[i].user_id+"front."+ cnic_front_filename_ext
+            let imageUrl = "images/user"+laundryOwner.user_id+"front."+ cnic_front_filename_ext
             let buff = await fs.readFileSync(imageUrl);
-            let cnic_front = buff.toString('base64');
-            address.cnic_front = cnic_front
+            cnic_front = buff.toString('base64');
             
         }
         else if(address.cnic_front_image_extension && address.cnic_front_image_extension.indexOf(".") == -1){
             cnic_front_filename_ext = address.cnic_front_image_extension;
-            let imageUrl = "images/user"+laundryOwners[i].user_id+"front."+ cnic_front_filename_ext
+            let imageUrl = "images/user"+laundryOwner.user_id+"front."+ cnic_front_filename_ext
             let buff = await fs.readFileSync(imageUrl);
-            let cnic_front = buff.toString('base64');
-            address.cnic_front = cnic_front
+            cnic_front = buff.toString('base64');
+            
         }
         
 
@@ -379,28 +494,22 @@ router.post('/getAllLaundryOwners', async function (req, res, next) {
     // await waitFor(500)
         if(address.cnic_back_image_extension && address.cnic_back_image_extension.indexOf(".") !== -1){
             cnic_back_filename_ext = address.cnic_back_image_extension.slice(address.cnic_back_image_extension.lastIndexOf('.') + 1);
-            let imageUrl = "images/user"+laundryOwners[i].user_id+"back."+ cnic_back_filename_ext
+            let imageUrl = "images/user"+laundryOwner.user_id+"back."+ cnic_back_filename_ext
             let buff = await fs.readFileSync(imageUrl);
-            let cnic_back = buff.toString('base64');
-            address.cnic_back = cnic_back
+            cnic_back = buff.toString('base64');
             
         }
         else if(address.cnic_back_image_extension && address.cnic_back_image_extension.indexOf(".") == -1){
             cnic_back_filename_ext = address.cnic_back_image_extension;
-            let imageUrl = "images/user"+laundryOwners[i].user_id+"back."+ cnic_back_filename_ext
+            let imageUrl = "images/user"+laundryOwner.user_id+"back."+ cnic_back_filename_ext
             let buff = await fs.readFileSync(imageUrl);
-            let cnic_back = buff.toString('base64');
-            address.cnic_back = cnic_back
+            cnic_back = buff.toString('base64');
+            
         }
-        else{}
-		
-			laundryOwners[i].address = address
-			laundryOwners[i].password = ""
-			
-			
-        }
+        else{}		
+        laundryOwner.address = address
         
-		result = { 'laundryOwners': laundryOwners }
+		result = { 'cnic_front': cnic_front, 'cnic_back': cnic_back, 'user_detail': laundryOwner }
 		return res.status(200).send(result);
 		
 			
@@ -416,7 +525,7 @@ router.post('/getLaundryCount', async function (req, res, next) {
 	blacklisted = 0
 	await parallel([
 		async () => { 
-		  await Promise.resolve(model.users
+		  const data = await model.users
 			.count({
 				where: {
 					$and: [
@@ -426,15 +535,12 @@ router.post('/getLaundryCount', async function (req, res, next) {
 						)
 					]
 				}
-			}))
-			.then(data => {
-				all = data
-				
-		 })
+			})
+			all = data
 		},
 	
 		async () => { 
-			await Promise.resolve(model.users
+			const data = await model.users
 			  .count({
 				  where: {
 					  $and: [
@@ -448,16 +554,16 @@ router.post('/getLaundryCount', async function (req, res, next) {
 						)
 					  ]
 				  }
-			  }))
-			  .then(data => {
+			  })
+			  
 				active = data
 				  
-		   })
+		   
 		  },
 	
 		  
 		async () => { 
-			await Promise.resolve(model.users
+			const data = await model.users
 			  .count({
 				  where: {
 					  $and: [
@@ -471,16 +577,16 @@ router.post('/getLaundryCount', async function (req, res, next) {
 						)
 					  ]
 				  }
-			  }))
-			  .then(data => {
+			  })
+			 
 				in_active = data
 				  
-		   })
+		  
 		  },
 	
 		  
 		async () => { 
-			await Promise.resolve(model.users
+			const data = await model.users
 			  .count({
 				  where: {
 					  $and: [
@@ -494,11 +600,11 @@ router.post('/getLaundryCount', async function (req, res, next) {
 						)
 					  ]
 				  }
-			  }))
-			  .then(data => {
+			  })
+			 
 				blacklisted = data
 				  
-		   })
+		  
 		  },
 	
 	  ], 4)
@@ -635,7 +741,7 @@ router.post('/getAllCustomers', async function (req, res, next) {
 			}
 		
 			else {
-				res.status(400).send('No Customer Exist');
+				res.status(200).send('No Customer Exist');
 				return;
 			}
 
@@ -701,7 +807,7 @@ router.post('/getAllLaundryOwnersByStatus', async function (req, res, next) {
 			}
 		
 			else {
-				res.status(400).send('No Laundry Owner Exist With this Status');
+				res.status(200).send('No Laundry Owner Exist With this Status');
 				return;
 			}
 
@@ -722,43 +828,43 @@ router.post('/getAllLaundryOwnersByStatus', async function (req, res, next) {
 				]
 			}
         })
-        if(address.cnic_front_image_extension && address.cnic_front_image_extension.indexOf(".") !== -1){
-            cnic_front_filename_ext = address.cnic_front_image_extension.slice(address.cnic_front_image_extension.lastIndexOf('.') + 1);
-            let imageUrl = "images/user"+laundryOwners[i].user_id+"front."+ cnic_front_filename_ext
-            let buff = await fs.readFileSync(imageUrl);
-            let cnic_front = buff.toString('base64');
-            address.cnic_front = cnic_front
+    //     if(address.cnic_front_image_extension && address.cnic_front_image_extension.indexOf(".") !== -1){
+    //         cnic_front_filename_ext = address.cnic_front_image_extension.slice(address.cnic_front_image_extension.lastIndexOf('.') + 1);
+    //         let imageUrl = "images/user"+laundryOwners[i].user_id+"front."+ cnic_front_filename_ext
+    //         let buff = await fs.readFileSync(imageUrl);
+    //         let cnic_front = buff.toString('base64');
+    //         address.cnic_front = cnic_front
             
-        }
-        else if(address.cnic_front_image_extension && address.cnic_front_image_extension.indexOf(".") == -1){
-            cnic_front_filename_ext = address.cnic_front_image_extension;
-            let imageUrl = "images/user"+laundryOwners[i].user_id+"front."+ cnic_front_filename_ext
-            let buff = await fs.readFileSync(imageUrl);
-            let cnic_front = buff.toString('base64');
-            address.cnic_front = cnic_front
-        }
+    //     }
+    //     else if(address.cnic_front_image_extension && address.cnic_front_image_extension.indexOf(".") == -1){
+    //         cnic_front_filename_ext = address.cnic_front_image_extension;
+    //         let imageUrl = "images/user"+laundryOwners[i].user_id+"front."+ cnic_front_filename_ext
+    //         let buff = await fs.readFileSync(imageUrl);
+    //         let cnic_front = buff.toString('base64');
+    //         address.cnic_front = cnic_front
+    //     }
         
 
-    else{
+    // else{
 
-    }
-    // await waitFor(500)
-        if(address.cnic_back_image_extension && address.cnic_back_image_extension.indexOf(".") !== -1){
-            cnic_back_filename_ext = address.cnic_back_image_extension.slice(address.cnic_back_image_extension.lastIndexOf('.') + 1);
-            let imageUrl = "images/user"+laundryOwners[i].user_id+"back."+ cnic_back_filename_ext
-            let buff = await fs.readFileSync(imageUrl);
-            let cnic_back = buff.toString('base64');
-            address.cnic_back = cnic_back
+    // }
+    // // await waitFor(500)
+    //     if(address.cnic_back_image_extension && address.cnic_back_image_extension.indexOf(".") !== -1){
+    //         cnic_back_filename_ext = address.cnic_back_image_extension.slice(address.cnic_back_image_extension.lastIndexOf('.') + 1);
+    //         let imageUrl = "images/user"+laundryOwners[i].user_id+"back."+ cnic_back_filename_ext
+    //         let buff = await fs.readFileSync(imageUrl);
+    //         let cnic_back = buff.toString('base64');
+    //         address.cnic_back = cnic_back
             
-        }
-        else if(address.cnic_back_image_extension && address.cnic_back_image_extension.indexOf(".") == -1){
-            cnic_back_filename_ext = address.cnic_back_image_extension;
-            let imageUrl = "images/user"+laundryOwners[i].user_id+"back."+ cnic_back_filename_ext
-            let buff = await fs.readFileSync(imageUrl);
-            let cnic_back = buff.toString('base64');
-            address.cnic_back = cnic_back
-        }
-        else{}
+    //     }
+    //     else if(address.cnic_back_image_extension && address.cnic_back_image_extension.indexOf(".") == -1){
+    //         cnic_back_filename_ext = address.cnic_back_image_extension;
+    //         let imageUrl = "images/user"+laundryOwners[i].user_id+"back."+ cnic_back_filename_ext
+    //         let buff = await fs.readFileSync(imageUrl);
+    //         let cnic_back = buff.toString('base64');
+    //         address.cnic_back = cnic_back
+    //     }
+    //     else{}
 		
 			laundryOwners[i].address = address
 			laundryOwners[i].password = ""
@@ -803,7 +909,7 @@ router.post('/getAllCustomersByStatus', async function (req, res, next) {
 			}
 		
 			else {
-				res.status(400).send('No Customer Exist With this Status');
+				res.status(200).send('No Customer Exist With this Status');
 				return;
 			}
 
@@ -866,7 +972,7 @@ router.post('/getAllCustomersByStatus', async function (req, res, next) {
 					}
 				
 					else {
-						res.status(400).send('No Laundry Owner Exist');
+						res.status(200).send('No Laundry Owner Exist');
 						return;
 					}
 		
@@ -935,11 +1041,13 @@ router.post('/checkIfUserExist', function (req, res, next) {
 		})
 		.then(data => {
 			if (data) {
-				res.status(400).send('This Email is already Registered');
+				response = {"response": "This Email is already Registered"}
+				res.status(200).send(response);
 				return;
 			}
 			else {
-				res.status(200).send('No User Found with this Email');
+				response = {"response": "No User Found with this Email"}
+				res.status(200).send(response);
 				return;
 			}
 		});
@@ -1096,7 +1204,7 @@ router.post('/update', function (req, res, next) {
 				.then(data => {
 					if (data && data.user_id != user_detail.user_id) {
 						result = {'err_msg': 'There is another user with this Email'}
-						res.status(400).send(result);
+						res.status(200).send(result);
 						return;
 					}
 					Promise.resolve(model.users
@@ -1112,7 +1220,7 @@ router.post('/update', function (req, res, next) {
 				})).then(currentUser => {
 					if(!currentUser){
 						result = {'err_msg': 'There is no user with this Id'}
-						res.status(400).send(result);
+						res.status(200).send(result);
 						return;
 					}
 
@@ -1170,7 +1278,7 @@ router.post('/changePassword', function (req, res, next) {
 		.then(data => {
 			if (data) {
 				if (data.password == user.password) {
-					res.status(400).send('Password is same as old password');
+					res.status(200).send('Password is same as old password');
 					return;
 				}
 				else {
@@ -1199,7 +1307,7 @@ router.post('/changePassword', function (req, res, next) {
 				}
 			}
 			else {
-				res.status(400).send('No User Exist with this Email');
+				res.status(200).send('No User Exist with this Email');
 				return;
 			}
 		});
@@ -1232,7 +1340,7 @@ router.post('/findMobileNoByEmail', function (req, res, next) {
 				
 			else {
 				result = {'err_msg': "No User Exist with this Email"}
-				res.status(400).send(result);
+				res.status(200).send(result);
 				return;
 			}
 		});
@@ -1303,7 +1411,7 @@ router.post('/login', function (req, res, next) {
 			}
 
 			else {
-				res.status(400).send('Incorrect Email or Password');
+				res.status(200).send('Incorrect Email or Password');
 				return;
 			}
 
@@ -1326,7 +1434,7 @@ router.post('/login', function (req, res, next) {
 // 		})
 // 		.then(data => {
 // 			if (!data) {
-// 				res.send(400, 'Role not found');
+// 				res.send(200, 'Role not found');
 // 				return;
 // 			}
 
@@ -1348,7 +1456,7 @@ router.post('/login', function (req, res, next) {
 // 				})
 // 				.then(data => {
 // 					if (data) {
-// 						res.status(400).send('There is another user with this Email or Mobile No');
+// 						res.status(200).send('There is another user with this Email or Mobile No');
 // 						return;
 // 					}
 
@@ -1412,7 +1520,7 @@ router.put('/', function (req, res, next) {
 		})
 		.then(data => {
 			if (!data) {
-				res.send(400, 'User not found');
+				res.send(200, 'User not found');
 				return;
 			}
 
@@ -1425,7 +1533,7 @@ router.put('/', function (req, res, next) {
 				})
 				.then(data => {
 					if (!data) {
-						res.send(400, 'Profile not found');
+						res.send(200, 'Profile not found');
 						return;
 					}
 
@@ -1444,7 +1552,7 @@ router.put('/', function (req, res, next) {
 						})
 						.then(data => {
 							if (data) {
-								res.send(400, 'There is another user with this name');
+								res.send(200, 'There is another user with this name');
 								return;
 							}
 
@@ -1483,7 +1591,7 @@ router.delete('/', function (req, res, next) {
 		})
 		.then(data => {
 			if (!data) {
-				res.send(400, 'User not found');
+				res.send(200, 'User not found');
 				return;
 			}
 

@@ -912,7 +912,7 @@ router.post('/getOrdersByStatusAndaundryId', async function (req, res, next) {
     // CHECK IF THERE IS USER WITH THIS EMAIL
     orders = []
     // laundry_ser = []
-    await Promise.resolve(model.orders
+    const data  = await model.orders
         .findAll({
             where: {
                 $and: [
@@ -922,9 +922,9 @@ router.post('/getOrdersByStatusAndaundryId', async function (req, res, next) {
                     )
                 ]
             }
-        }))
-        .then(data => {
-            if (!data || data.length <= 0) {
+        })
+        
+            if (!data || data == null || data.length <= 0) {
                 result = {"msg": "No Order Exist for this Laundry"}
                 return res.status(400).send(result);
             }
@@ -934,7 +934,7 @@ router.post('/getOrdersByStatusAndaundryId', async function (req, res, next) {
                 // console.log(laundry_owner_service)
             }
             // laundry_ser = laundry_owner_service
-        })
+        
 
 
 
@@ -1108,7 +1108,7 @@ router.post('/getOrdersByStatusAndCustomerId', async function (req, res, next) {
     // CHECK IF THERE IS USER WITH THIS EMAIL
     orders = []
     // laundry_ser = []
-    await Promise.resolve(model.orders
+    const data  = await (model.orders
         .findAll({
             where: {
                 $and: [
@@ -1124,8 +1124,8 @@ router.post('/getOrdersByStatusAndCustomerId', async function (req, res, next) {
                 ]
             }
         }))
-        .then(data => {
-            if (!data || data.length <= 0) {
+     
+            if (!data || data == null || data.length <= 0) {
                 result = {"msg": "No Order Exist for this Customer"}
                 return res.status(400).send(result);
             }
@@ -1135,7 +1135,7 @@ router.post('/getOrdersByStatusAndCustomerId', async function (req, res, next) {
                 // console.log(laundry_owner_service)
             }
             // laundry_ser = laundry_owner_service
-        })
+      
 
 
 

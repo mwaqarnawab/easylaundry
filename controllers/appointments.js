@@ -921,7 +921,7 @@ router.post('/getAppointmentByStatusAndaundryId', async function (req, res, next
     // CHECK IF THERE IS USER WITH THIS EMAIL
     appointments = []
     // laundry_ser = []
-    await Promise.resolve(model.appointments
+    const data = await model.appointments
         .findAll({
             where: {
                 $and: [
@@ -931,9 +931,9 @@ router.post('/getAppointmentByStatusAndaundryId', async function (req, res, next
                     )
                 ]
             }
-        }))
-        .then(data => {
-            if (!data || data.length <= 0) {
+        })
+        
+            if (!data || data == null ||data.length <= 0) {
                 result = {"msg": "No Appointment Exist for this Laundry"}
                 return res.status(400).send(result);
             }
@@ -943,7 +943,7 @@ router.post('/getAppointmentByStatusAndaundryId', async function (req, res, next
                 // console.log(laundry_owner_service)
             }
             // laundry_ser = laundry_owner_service
-        })
+     
 
 
 
@@ -1117,7 +1117,7 @@ router.post('/getAppointmentsByStatusAndCustomerId', async function (req, res, n
     // CHECK IF THERE IS USER WITH THIS EMAIL
     appointments = []
     // laundry_ser = []
-    await Promise.resolve(model.appointments
+    const data = await model.appointments
         .findAll({
             where: {
                 $and: [
@@ -1132,9 +1132,9 @@ router.post('/getAppointmentsByStatusAndCustomerId', async function (req, res, n
 
                 ]
             }
-        }))
-        .then(data => {
-            if (!data || data.length <= 0) {
+        })
+        console.log("data is >>>>>>>>" + data)
+            if (!data || data == null || data.length <= 0) {
                 result = {"msg": "No Appointment Exist for this Customer"}
                 return res.status(400).send(result);
             }
@@ -1144,7 +1144,7 @@ router.post('/getAppointmentsByStatusAndCustomerId', async function (req, res, n
                 // console.log(laundry_owner_service)
             }
             // laundry_ser = laundry_owner_service
-        })
+        
 
 
 

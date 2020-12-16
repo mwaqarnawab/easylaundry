@@ -16,9 +16,9 @@ const { request } = require('express');
 const financial_details = require('../models/financial_details');
 
 
-router.post('/getFinancialDetailsByUserId', function (req, res, next) {
+router.post('/getFinancialDetailsByUserId',async function (req, res, next) {
 	
-	Promise.resolve(model.financial_details
+	const data = await model.financial_details
 		.findOne({
 			where: {
 				$and: [
@@ -28,18 +28,23 @@ router.post('/getFinancialDetailsByUserId', function (req, res, next) {
 					)
 				]
 			}
-		}))
-		.then(data => {
+		})
+		
 			if (!data) {
-                result = {"err_msg": "No earning details exist"}
-				return res.status(400).send(result);
-            }
+					response = {"user": req.body.user_id,
+					"total_earning": 0,
+					"total_spending": 0}
+					result = {"financial_details": response}
+				return res.status(200).send(result);
+				}
+                
+            
             else{
                 result = { 'financial_details': data }
 				return res.status(200).send(result);
 
             }
-        })
+        
 			
 });
 
